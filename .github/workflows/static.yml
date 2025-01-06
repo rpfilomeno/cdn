@@ -12,7 +12,7 @@ jobs:
           ref: main    #checkout different branch
 
       - name: Generate Directory Listings
-        uses: rpfilomeno/github-pages-directory-listing@latest
+        uses: rpfilomeno/github-pages-directory-listing
         with:
           FOLDER: data      #directory to generate index
 
