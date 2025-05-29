@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Philippine Labor Market & AI Impact Infographic (May 2025)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F9FA;
+            color: #212529;
+        }
+        .chart-container-styles {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .kpi-card {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .kpi-value {
+            font-size: 2.25rem; /* text-4xl */
+            font-weight: 700; /* font-bold */
+            color: #118AB2; /* Energetic Blue */
+        }
+        .kpi-label {
+            font-size: 0.875rem; /* text-sm */
+            color: #495057;
+            margin-top: 0.5rem;
+        }
+        .section-title {
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: 700; /* font-bold */
+            color: #06D6A0; /* Energetic Green/Teal */
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .sub-section-title {
+            font-size: 1.5rem; /* text-2xl */
+            font-weight: 600; /* font-semibold */
+            color: #118AB2; /* Energetic Blue */
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .flowchart-step {
+            border: 2px solid #06D6A0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            background-color: #ffffff;
+        }
+        .flowchart-arrow {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #06D6A0;
+            margin: 0.25rem 0;
+        }
+        .highlight-pink { color: #EF476F; }
+        .highlight-yellow { color: #FFD166; }
+        .highlight-red { color: #FF6B6B; }
+        .icon-placeholder {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+            color: #118AB2;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <header class="bg-gradient-to-r from-[#118AB2] to-[#06D6A0] text-white py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="text-4xl sm:text-5xl font-bold mb-4">The Evolving Philippine Labor Landscape</h1>
+            <p class="text-xl sm:text-2xl mb-2">Navigating Sectoral Shifts and the Rise of Artificial Intelligence (May 2025 Outlook)</p>
+            <p class="text-sm">An Infographic Based on Recent Labor Force Data and AI Impact Projections</p>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <section id="market-snapshot" class="mb-12">
+            <h2 class="section-title">Current Labor Market Snapshot</h2>
+            <p class="text-center text-gray-600 mb-8">Key indicators from the March 2025 Labor Force Survey, providing insights into the Philippine employment situation.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="kpi-card">
+                    <div class="kpi-value">96.1%</div>
+                    <div class="kpi-label">Employment Rate</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value">3.9%</div>
+                    <div class="kpi-label">Unemployment Rate</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value">13.4%</div>
+                    <div class="kpi-label">Underemployment Rate</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value">62.9%</div>
+                    <div class="kpi-label">Labor Force Participation Rate</div>
+                </div>
+            </div>
+        </section>
+
+        <section id="declining-sectors" class="mb-12">
+            <h2 class="section-title">Fastest Declining Job Sectors (Non-AI Driven)</h2>
+            <p class="text-center text-gray-600 mb-8">Recent data indicates significant job losses in several sectors, primarily driven by non-technological factors like weather conditions, seasonal cycles, and policy changes.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="card">
+                    <h3 class="sub-section-title text-center">Year-on-Year Declines (Mar 2024 - Mar 2025)</h3>
+                    <p class="text-sm text-gray-500 text-center mb-4">Job losses in thousands</p>
+                    <div class="chart-container-styles h-80 md:h-96">
+                        <canvas id="yoyDeclineChart"></canvas>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-700">The <strong class="highlight-red">Agriculture and Forestry</strong> sector experienced the largest drop, losing 609,000 jobs, largely due to adverse weather. <strong class="highlight-red">Public Administration and Defense</strong> also saw a significant reduction.</p>
+                </div>
+                <div class="card">
+                    <h3 class="sub-section-title text-center">Month-on-Month Declines (Feb 2025 - Mar 2025)</h3>
+                    <p class="text-sm text-gray-500 text-center mb-4">Job losses in thousands</p>
+                    <div class="chart-container-styles h-80 md:h-96">
+                        <canvas id="momDeclineChart"></canvas>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-700"><strong class="highlight-red">Construction</strong> faced the sharpest recent drop (-473,000 jobs), followed by <strong class="highlight-red">Wholesale and Retail Trade</strong>. These highlight immediate pressures on employment likely due to project cycles and specific economic activities.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="ai-impact-overview" class="mb-12">
+            <h2 class="section-title">The Rise of AI: Exposure & Broad Impact</h2>
+            <p class="text-center text-gray-600 mb-8">Artificial Intelligence is not yet the primary driver of the largest numerical job declines but is a critical transformative force reshaping roles across industries.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div class="card">
+                    <h3 class="sub-section-title text-center">AI Displacement Risk</h3>
+                     <p class="text-sm text-gray-500 text-center mb-4">Portion of total workforce (IMF Projection)</p>
+                    <div class="chart-container-styles h-72 md:h-80">
+                        <canvas id="aiDisplacementRiskChart"></canvas>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-700 text-center">The IMF projects that <strong class="highlight-yellow">14% of the Philippine workforce</strong> faces a direct risk of displacement by AI.</p>
+                </div>
+                <div class="card">
+                    <h3 class="sub-section-title text-center">AI Job Exposure & Complementarity</h3>
+                     <p class="text-sm text-gray-500 text-center mb-4">Nature of AI's impact on tasks</p>
+                    <div class="chart-container-styles h-72 md:h-80">
+                        <canvas id="aiExposureComplementarityChart"></canvas>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-700">While 35-40% of jobs are "highly exposed" to AI, a significant portion (60-61% of those) are "highly complementary," suggesting AI will augment rather than replace, provided upskilling occurs.</p>
+                </div>
+            </div>
+             <div class="card mt-8">
+                <h3 class="sub-section-title">Demographics Most Exposed to AI</h3>
+                <p class="text-gray-700 mb-4">AI's impact is not uniform. Certain demographic groups are more exposed due to their concentration in automatable roles:</p>
+                <ul class="list-none space-y-2">
+                    <li class="flex items-center"><span class="icon-placeholder">🎓</span> College-educated workers</li>
+                    <li class="flex items-center"><span class="icon-placeholder">երի</span> Young workers</li>
+                    <li class="flex items-center"><span class="icon-placeholder">🏙️</span> Urban workers</li>
+                    <li class="flex items-center"><span class="icon-placeholder">♀️</span> Female workers in the services sector (particularly in clerical, service, and sales roles)</li>
+                </ul>
+                <p class="mt-3 text-sm text-gray-600">This disparity underscores the need for targeted, gender-sensitive policy interventions and upskilling initiatives.</p>
+            </div>
+        </section>
+
+        <section id="ai-vulnerable-roles" class="mb-12">
+            <h2 class="section-title">AI's Impact on Specific Job Roles & Sectors</h2>
+            <p class="text-center text-gray-600 mb-8">Jobs characterized by routine, repetitive tasks are particularly vulnerable. However, AI is also transforming roles, pushing human workers towards more complex and strategic functions.</p>
+            
+            <div class="card mb-8">
+                <h3 class="sub-section-title">Job Roles Highly Vulnerable to AI Automation</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="p-4 border border-gray-200 rounded-lg"><strong><span class="icon-placeholder">✍️</span>Clerical Jobs:</strong> Data Entry, Admin Secretaries, Bookkeepers</div>
+                    <div class="p-4 border border-gray-200 rounded-lg"><strong><span class="icon-placeholder">🎧</span>Customer Service:</strong> Routine Inquiries, Basic Support</div>
+                    <div class="p-4 border border-gray-200 rounded-lg"><strong><span class="icon-placeholder">⚖️</span>Legal Support:</strong> Paralegals, Document Review</div>
+                    <div class="p-4 border border-gray-200 rounded-lg"><strong><span class="icon-placeholder">📊</span>Accounting & Finance:</strong> Tellers, Basic Analysis, Loan Officers</div>
+                    <div class="p-4 border border-gray-200 rounded-lg"><strong><span class="icon-placeholder">🏭</span>Manufacturing:</strong> Assembly Line Workers, Quality Inspectors</div>
+                    <div class="p-4 border border-gray-200 rounded-lg"><strong><span class="icon-placeholder">🛒</span>Retail:</strong> Cashiers, Basic Inventory</div>
+                    <div class="p-4 border border-gray-200 rounded-lg"><strong><span class="icon-placeholder">🚚</span>Transportation:</strong> Drivers, Delivery Couriers (long-term)</div>
+                    <div class="p-4 border border-gray-200 rounded-lg"><strong><span class="icon-placeholder">📝</span>Other Roles:</strong> Transcriptionists, Translators, Proofreaders</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="card">
+                    <h3 class="sub-section-title"><span class="icon-placeholder">📞</span>Business Process Outsourcing (BPO)</h3>
+                    <p class="text-gray-700 mb-2">A cornerstone of the economy, BPO faces significant AI disruption but also shows adaptation.</p>
+                    <p class="text-xl font-semibold highlight-yellow mb-1">89% of BPO roles vulnerable (IMF)</p>
+                    <p class="text-lg font-semibold highlight-red mb-3">300,000 potential job losses in 5 years due to AI</p>
+                    <div class="chart-container-styles h-64">
+                        <canvas id="bpoJobTrendChart"></canvas>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-700">Despite threats, the BPO industry is shifting to higher-value services (analytics, software development) and still aims for growth, leveraging AI for productivity. This highlights a dual impact: displacement in routine tasks but growth in specialized, AI-augmented roles.</p>
+                </div>
+
+                <div class="card">
+                    <h3 class="sub-section-title"><span class="icon-placeholder">📁</span>Administrative & Support Services</h3>
+                    <p class="text-gray-700">This sector sees AI automating core tasks like data entry, scheduling, and routine inquiries. Roles like data entry clerks and receptionists are highly vulnerable. AI investments focus on back-office automation and enhancing customer experience.</p>
+                </div>
+
+                <div class="card">
+                    <h3 class="sub-section-title"><span class="icon-placeholder">🛍️</span>Wholesale & Retail Trade</h3>
+                    <p class="text-gray-700">AI automates inventory management, demand forecasting, and supply chains. Self-checkout replaces cashiers. Human roles shift towards strategic merchandising, personalized service, and overseeing AI systems.</p>
+                </div>
+                
+                <div class="card">
+                    <h3 class="sub-section-title"><span class="icon-placeholder">🛠️</span>Manufacturing</h3>
+                    <p class="text-gray-700">AI-integrated robotics handle repetitive assembly and quality inspection. Interestingly, Philippine firms adopting automation are often hiring more, suggesting AI augments efficiency leading to expansion and new job types rather than immediate net job cuts.</p>
+                </div>
+            </div>
+             <div class="card mt-8 md:col-span-2">
+                <h3 class="sub-section-title"><span class="icon-placeholder">🔬</span>Professional, Scientific, & Technical Activities</h3>
+                <p class="text-gray-700">"White-collar" jobs are increasingly impacted. AI automates research, document review, and data analysis for paralegals, accountants, financial analysts. This demands a skill shift towards analytical thinking, complex problem-solving, and strategic decision-making, where human judgment remains crucial.</p>
+            </div>
+        </section>
+
+        <section id="job-transformation" class="mb-12">
+            <h2 class="section-title">Job Transformation, Not Just Displacement</h2>
+            <div class="card">
+                <p class="text-gray-700 mb-4">The consensus is that AI will more often <strong class="highlight-pink">transform jobs</strong> rather than eliminate them entirely. AI takes over routine tasks, freeing humans for roles requiring creativity, critical thinking, emotional intelligence, and complex problem-solving – skills AI cannot replicate.</p>
+                <h3 class="sub-section-title">Emerging AI-Complementary Roles:</h3>
+                <ul class="list-disc list-inside space-y-1 text-gray-700 pl-4">
+                    <li>AI Quality Analysts</li>
+                    <li>Customer Experience Specialists</li>
+                    <li>Digital Support Specialists</li>
+                    <li>Technical Advisors for AI Systems</li>
+                    <li>AI Trainers and Operators</li>
+                    <li>AI Integration Specialists</li>
+                    <li>Prompt Engineers</li>
+                </ul>
+                <p class="mt-4 text-sm text-red-600 font-semibold">A Critical Concern: The "Digital Sweatshop" Risk</p>
+                <p class="text-sm text-gray-600">While new AI-related jobs emerge (est. 100,000), there's concern they may not offset losses and could involve low-value, repetitive tasks like data annotation. This risks a low-wage, low-skill trap. Proactive strategies are needed to steer the workforce towards higher-value AI services and ensure fair labor practices.</p>
+            </div>
+        </section>
+
+        <section id="recommendations" class="mb-12">
+            <h2 class="section-title">Navigating the Future: Strategic Recommendations</h2>
+            <p class="text-center text-gray-600 mb-8">A proactive, multi-pronged national strategy is essential for workforce resilience, focusing on upskilling, human-AI collaboration, and supportive policies.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="card">
+                    <h3 class="sub-section-title text-center">Key Focus Areas</h3>
+                     <ul class="space-y-3 text-gray-700">
+                        <li class="flex items-start">
+                            <span class="text-2xl mr-3 highlight-pink">💡</span>
+                            <div><strong>Upskilling & Reskilling:</strong> Massive investment in continuous learning. Focus on AI proficiency, data analysis, cybersecurity, AND soft skills (creativity, critical thinking, emotional intelligence).</div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-2xl mr-3 highlight-yellow">🤝</span>
+                            <div><strong>Human-AI Collaboration:</strong> Design tech to augment human capabilities. Focus on uniquely human skills where AI falls short.</div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-2xl mr-3 highlight-red">🚀</span>
+                            <div><strong>Developing New Roles:</strong> Support emerging AI-complementary positions like AI operations, prompt engineering, and advanced data analytics.</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <h3 class="sub-section-title text-center">Policy & Industry Actions</h3>
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-lg text-[#06D6A0] mb-2">Government Role:</h4>
+                        <div class="flowchart-step">Digital Infrastructure Investment (Connectivity, Data Centers)</div>
+                        <div class="flowchart-arrow">↓</div>
+                        <div class="flowchart-step">Education & Curriculum Reform (Integrate AI/Digital Skills)</div>
+                        <div class="flowchart-arrow">↓</div>
+                        <div class="flowchart-step">Social Safety Nets & Transition Support (Training, Re-employment)</div>
+                        <div class="flowchart-arrow">↓</div>
+                        <div class="flowchart-step">Regulatory Framework for AI (Ethical Use, Data Privacy)</div>
+                         <div class="flowchart-arrow">↓</div>
+                        <div class="flowchart-step">Public-Private Partnerships (Align Training with Industry)</div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-lg text-[#118AB2] mb-2">Industry Role:</h4>
+                        <div class="flowchart-step">Proactive AI Integration & Workforce Strategy (Reskill/Upskill)</div>
+                        <div class="flowchart-arrow">↓</div>
+                        <div class="flowchart-step">Investment in Employee Development ("Skills for the Future" Programs)</div>
+                        <div class="flowchart-arrow">↓</div>
+                        <div class="flowchart-step">Focus on High-Value Services (Move up value chain, leverage AI for augmentation)</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="conclusion" class="text-center py-8">
+             <div class="card">
+                <h2 class="section-title">Charting a Future-Ready Philippine Labor Market</h2>
+                <p class="text-gray-700 leading-relaxed max-w-3xl mx-auto">
+                    The Philippine labor market is at a pivotal juncture. While traditional sectors face non-AI driven declines, AI is reshaping the nature of work. The path forward lies not in resisting AI, but in strategically adapting to it. By investing in human capital, fostering digital readiness, prioritizing upskilling, and promoting human-AI collaboration, the Philippines can navigate this transformation, turning challenges into opportunities for a more productive, resilient, and inclusive economic future. The focus must be on future-proofing the workforce to harness AI's potential for national development and individual prosperity.
+                </p>
+            </div>
+        </section>
+        
+        <footer class="text-center text-sm text-gray-500 py-6">
+            Infographic based on "The Evolving Philippine Labor Landscape: Declining Job Sectors and the Accelerating Impact of Artificial Intelligence (May 2025 Outlook)" report.
+            <br/>Data primarily reflects March 2025 LFS and various cited expert analyses on AI.
+            <br/>Visualizations created using Chart.js (Canvas rendering). No SVG or Mermaid JS used.
+        </footer>
+
+    </main>
+
+    <script>
+        const energeticPlayfulPalette = {
+            redPink: '#FF6B6B',
+            yellow: '#FFD166',
+            greenTeal: '#06D6A0',
+            blue: '#118AB2',
+            darkerPinkRed: '#EF476F',
+            lightGray: '#F8F9FA',
+            darkText: '#212529',
+            mediumText: '#495057'
+        };
+
+        function wrapText(text, maxLength = 16) {
+            if (typeof text !== 'string' || text.length <= maxLength) {
+                return text;
+            }
+            const words = text.split(' ');
+            const lines = [];
+            let currentLine = '';
+            for (const word of words) {
+                if ((currentLine + word).length > maxLength && currentLine.length > 0) {
+                    lines.push(currentLine.trim());
+                    currentLine = '';
+                }
+                currentLine += word + ' ';
+            }
+            if (currentLine.trim().length > 0) {
+                lines.push(currentLine.trim());
+            }
+            return lines.length > 0 ? lines : [text];
+        }
+
+        const chartTooltipConfig = {
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            const item = tooltipItems[0];
+                            if (!item || !item.chart || !item.chart.data || !item.chart.data.labels) return '';
+                            let label = item.chart.data.labels[item.dataIndex];
+                            if (Array.isArray(label)) {
+                              return label.join(' ');
+                            }
+                            return label;
+                        }
+                    }
+                },
+                legend: {
+                    labels: {
+                        color: energeticPlayfulPalette.darkText,
+                        font: { size: 12 }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: { color: energeticPlayfulPalette.mediumText, font: { size: 10 } },
+                    grid: { color: '#e0e0e0' }
+                },
+                x: {
+                    ticks: { color: energeticPlayfulPalette.mediumText, font: { size: 10 } },
+                    grid: { display: false }
+                }
+            },
+            responsive: true,
+            maintainAspectRatio: false
+        };
+
+
+        const yoyDeclineData = {
+            labels: [
+                wrapText('Agriculture and Forestry'), 
+                wrapText('Public Admin & Defense; Social Security'), 
+                wrapText('Manufacturing'), 
+                wrapText('Wholesale & Retail Trade; Vehicle Repair'),
+                wrapText('Professional, Scientific & Technical')
+            ].map(label => wrapText(Array.isArray(label) ? label.join(' ') : label)),
+            datasets: [{
+                label: 'Job Losses (Thousands)',
+                data: [609, 394, 281, 175, 100],
+                backgroundColor: energeticPlayfulPalette.redPink,
+                borderColor: energeticPlayfulPalette.darkerPinkRed,
+                borderWidth: 1
+            }]
+        };
+        new Chart(document.getElementById('yoyDeclineChart'), { type: 'bar', data: yoyDeclineData, options: chartTooltipConfig });
+
+        const momDeclineData = {
+            labels: [
+                wrapText('Construction'),
+                wrapText('Wholesale & Retail Trade; Vehicle Repair'),
+                wrapText('Other Service Activities'),
+                wrapText('Fishing and Aquaculture'),
+                wrapText('Public Admin & Defense; Social Security')
+            ].map(label => wrapText(Array.isArray(label) ? label.join(' ') : label)),
+            datasets: [{
+                label: 'Job Losses (Thousands)',
+                data: [473, 439, 290, 285, 158],
+                backgroundColor: energeticPlayfulPalette.yellow,
+                borderColor: energeticPlayfulPalette.redPink,
+                borderWidth: 1
+            }]
+        };
+        new Chart(document.getElementById('momDeclineChart'), { type: 'bar', data: momDeclineData, options: chartTooltipConfig });
+        
+        const aiDisplacementRiskData = {
+            labels: ['Direct Risk of Displacement by AI', 'Not Directly Displaced'],
+            datasets: [{
+                label: 'AI Displacement Risk',
+                data: [14, 86],
+                backgroundColor: [energeticPlayfulPalette.yellow, energeticPlayfulPalette.lightGray],
+                borderColor: [energeticPlayfulPalette.redPink, '#cccccc'],
+                borderWidth: 1
+            }]
+        };
+        new Chart(document.getElementById('aiDisplacementRiskChart'), { type: 'doughnut', data: aiDisplacementRiskData, options: {...chartTooltipConfig, cutout: '60%'} });
+
+        const aiExposureComplementarityData = {
+            labels: ['Highly Exposed & Complementary', 'Highly Exposed & Low Complementarity', 'Not Highly Exposed'],
+            datasets: [{
+                label: 'AI Job Exposure & Complementarity',
+                data: [
+                    (37.5 * 0.605), // Assuming 37.5% as midpoint of 35-40% highly exposed, 60.5% of that is complementary
+                    (37.5 * (1 - 0.605)), // Exposed but low complementarity
+                    (100 - 37.5) // Not highly exposed
+                ],
+                backgroundColor: [
+                    energeticPlayfulPalette.greenTeal,  // Complementary
+                    energeticPlayfulPalette.yellow,     // Exposed, Low Complementarity
+                    energeticPlayfulPalette.lightGray   // Not Highly Exposed
+                ],
+                borderColor: [
+                    energeticPlayfulPalette.blue,
+                    energeticPlayfulPalette.redPink,
+                    '#cccccc'
+                ],
+                borderWidth: 1
+            }]
+        };
+        new Chart(document.getElementById('aiExposureComplementarityChart'), { type: 'pie', data: aiExposureComplementarityData, options: {...chartTooltipConfig, cutout: '0%'} });
+        
+        const bpoJobTrendData = {
+            labels: ['Actual Job Additions 2024', 'Projected Additional Jobs by 2028'],
+            datasets: [{
+                label: 'BPO Job Figures (Thousands)',
+                data: [135, 1100], 
+                backgroundColor: [energeticPlayfulPalette.blue, energeticPlayfulPalette.greenTeal],
+                borderColor: [energeticPlayfulPalette.darkerPinkRed, energeticPlayfulPalette.blue],
+                borderWidth: 1
+            }]
+        };
+        new Chart(document.getElementById('bpoJobTrendChart'), { type: 'bar', data: bpoJobTrendData, options: {...chartTooltipConfig, indexAxis: 'y'} });
+
+    </script>
+</body>
+</html>
