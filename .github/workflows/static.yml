@@ -10,7 +10,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main    #checkout different branch
-
+          
+      - name: Secret Scanning
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --results=verified,unknown
+      
       - name: Generate Directory Listings
         uses: rpfilomeno/github-pages-directory-listing@v1.0.0-rog
         with:
