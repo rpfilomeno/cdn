@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Is automation right for us? A short self-check</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#f4f3ef; --surface:#ffffff; --ink:#1d2433; --muted:#5f6878; --line:#d8d9de;
+  --accent:#27408b; --accent-ink:#ffffff; --good:#17794a; --mid:#a8650a; --bad:#b3372f; --chip:#eceef4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#141824; --surface:#1d2333; --ink:#e9ecf5; --muted:#a2abc0; --line:#323a52;
+    --accent:#8fa8f5; --accent-ink:#10162b; --good:#5fd49a; --mid:#e8b25a; --bad:#f08a80; --chip:#262d44;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#141824; --surface:#1d2333; --ink:#e9ecf5; --muted:#a2abc0; --line:#323a52;
+  --accent:#8fa8f5; --accent-ink:#10162b; --good:#5fd49a; --mid:#e8b25a; --bad:#f08a80; --chip:#262d44;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif;font-size:17px;line-height:1.5}
+main{max-width:640px;margin:0 auto;padding:24px 16px 60px}
+h1{font-family:"Fraunces",Georgia,serif;font-size:1.7rem;line-height:1.25;margin:0 0 8px}
+h2{font-family:"Fraunces",Georgia,serif;font-size:1.3rem;line-height:1.35;margin:0 0 16px}
+p{margin:0 0 14px}
+.muted{color:var(--muted);font-size:.95rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 18px}
+.bar{height:6px;background:var(--chip);border-radius:3px;margin-bottom:18px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+.opt{display:block;position:relative;margin-bottom:10px}
+.opt input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0}
+.opt span{display:block;padding:13px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.opt input:checked + span{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent);background:var(--chip)}
+.opt input:focus-visible + span{outline:3px solid var(--accent);outline-offset:2px}
+.btns{display:flex;gap:10px;margin-top:18px}
+button{font:inherit;padding:12px 18px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600;flex:1}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.score{margin-bottom:20px}
+.score .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.score b{font-family:"Fraunces",Georgia,serif;font-size:1.2rem}
+.v{font-weight:600}.v.good{color:var(--good)}.v.mid{color:var(--mid)}.v.bad{color:var(--bad)}
+.meter{height:10px;background:var(--chip);border-radius:5px;margin:6px 0 4px;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:5px;background:var(--accent)}
+ul.gaps{margin:6px 0 0;padding-left:20px}
+ul.gaps li{margin-bottom:6px}
+textarea{width:100%;min-height:120px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;font-size:.9rem}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <div id="intro" class="card">
+    <h1>Is automation right for us?</h1>
+    <p>Fourteen short questions, about five minutes. They look at two things: whether your problem really calls for AI automation, and whether your business is ready to put it to work.</p>
+    <p class="muted">None of the answers are trick answers. Every option is something real companies say. Pick what is true today, not what you hope will be true. You will see your results at the end.</p>
+    <div class="btns"><button class="primary" id="start">Start</button></div>
+  </div>
+
+  <div id="quiz" class="card" hidden>
+    <div class="bar" aria-hidden="true"><i id="prog"></i></div>
+    <p class="muted" id="count"></p>
+    <h2 id="q"></h2>
+    <div id="opts" role="radiogroup" aria-labelledby="q"></div>
+    <div class="btns">
+      <button id="back">Back</button>
+      <button class="primary" id="next" disabled>Next</button>
+    </div>
+  </div>
+
+  <div id="result" hidden></div>
+</main>
+
+<script>
+var Q = [
+ // ---- NEED ----
+ {g:"need", a:"Cost of the problem", p:"Think of the task you want automated. When did you last put a number on what it costs you?", gap:"The cost of this task isn’t measured yet. Put a figure on hours, errors, or lost revenue before spending on a solution.", o:[
+  ["We track hours or errors for it, and I can give you last month’s figure.",2],
+  ["I could estimate it, but I would be guessing.",1],
+  ["It just feels like a lot. People are always busy with it.",0],
+  ["Leadership wants it fixed whatever the numbers say.",0]]},
+ {g:"need", a:"Consistency", p:"Pick ten recent cases of this task. How alike would they be?", gap:"The task may be too varied, or too little understood, to automate well. Study a sample of real cases first.", o:[
+  ["Seven or eight follow the same steps, with a few oddities.",2],
+  ["Nearly every one is different, and people use judgment each time.",1],
+  ["Identical, every time, with no exceptions at all.",1],
+  ["I haven’t looked closely at individual cases.",0]]},
+ {g:"need", a:"Fit for AI", p:"What is the hardest part of this task for the person doing it?", gap:"The hard part may not need AI. A simpler tool or script could solve it at lower cost.", o:[
+  ["Reading or writing messy material: emails, documents, notes, calls.",2],
+  ["Moving data between systems and keeping everything matched.",1],
+  ["Nothing is hard. It is just constant and dull.",1],
+  ["Decisions that depend on experience or a relationship.",0]]},
+ {g:"need", a:"Tolerance for errors", p:"If the automation got one case in twenty wrong, what would happen?", gap:"Mistakes would be costly here. Any automation would need strong human review, or may not be suitable.", o:[
+  ["Someone would catch it in review and fix it. Annoying, not serious.",2],
+  ["A customer might notice, but we could recover.",1],
+  ["We would lose trust in it and stop using it.",0],
+  ["It could cause legal, financial, or safety problems.",0]]},
+ {g:"need", a:"Volume", p:"How often does this task happen?", gap:"Low or uneven volume makes it hard to recover the cost of automating. Check whether volume is growing.", o:[
+  ["Dozens of times a day, or hundreds a week.",2],
+  ["Often, but it swings a lot with seasons or big clients.",1],
+  ["A few times a week, but each one takes a long time.",1],
+  ["A handful of times a month.",0]]},
+ {g:"need", a:"Reason for acting", p:"What started the conversation about automating this?", gap:"The motivation looks external or vague. Name the specific bottleneck you want gone before committing.", o:[
+  ["A specific bottleneck we have lived with for months.",2],
+  ["A deadline or a lost team member made it urgent.",1],
+  ["Someone found a tool that looked promising.",1],
+  ["Competitors or the board are talking about AI.",0]]},
+ {g:"need", a:"Other fixes tried", p:"Have you tried to fix this another way?", gap:"A previous attempt fell apart when the process changed. Settle the process before automating it.", o:[
+  ["Yes: templates, hiring, or a tool. It helped, then hit a ceiling.",2],
+  ["No, this is the first time we are looking at it.",1],
+  ["Yes, and it failed, so we are skeptical but open.",1],
+  ["We tried automating before, but the process kept changing.",0]]},
+ // ---- READINESS ----
+ {g:"ready", a:"Process", p:"If a new hire started tomorrow, how would they learn this task?", gap:"The process isn’t written down. Document the steps and collect examples before building anything.", o:[
+  ["From a written guide plus a few worked examples.",2],
+  ["By shadowing a colleague for a couple of weeks.",1],
+  ["Everyone does it slightly differently.",0],
+  ["Only one person really knows it.",0]]},
+ {g:"ready", a:"Data", p:"Suppose I asked for 20 real examples by Friday. What would happen?", gap:"Getting sample data would be slow or uncertain. Find out where it lives, who owns it, and whether it can be shared.", o:[
+  ["I would send them, with sensitive details already marked.",2],
+  ["I would need to ask IT or another team first.",1],
+  ["I would have to dig through inboxes and shared drives.",0],
+  ["I am not sure we are allowed to share them outside the company.",0]]},
+ {g:"ready", a:"Systems", p:"How do the tools involved connect to each other today?", gap:"Systems access may block progress. Identify who controls each tool and whether it offers integrations.", o:[
+  ["Most have integrations or APIs, and someone manages access.",2],
+  ["Mostly by hand: exports, copy and paste, spreadsheets.",1],
+  ["A vendor controls them, and changes need their approval.",1],
+  ["Some are old or custom, and nobody fully knows how they work.",0]]},
+ {g:"ready", a:"People", p:"Who would work with me week to week on this?", gap:"There is no clear day-to-day owner. A named person with protected time is the strongest predictor of success.", o:[
+  ["A named person who has set aside time for it.",2],
+  ["The team doing the task now, though they are wary.",1],
+  ["A senior leader who wants updates, not details.",1],
+  ["Whoever is free when a question comes up.",0]]},
+ {g:"ready", a:"Expectations", p:"After launch, what do you picture happening to the people who do this task now?", gap:"Expectations need resetting. Automation needs reviewers and exception handlers, and staff need to be part of the plan.", o:[
+  ["They move to checking results and handling exceptions.",2],
+  ["Their work changes, but we haven’t planned how.",1],
+  ["We would need fewer people.",0],
+  ["Nothing needs checking. It should simply run.",0]]},
+ {g:"ready", a:"Budget", p:"How is this project funded?", gap:"Funding is unsettled. Confirm the build budget, ongoing running costs, and who approves them.", o:[
+  ["A budget is approved, including running costs after launch.",2],
+  ["Money is available, but someone not yet involved must approve it.",1],
+  ["We have a build budget and haven’t thought about afterwards.",1],
+  ["We will decide once we see whether it works.",0]]},
+ {g:"ready", a:"Measuring success", p:"Six months after launch, how will you know it worked?", gap:"There is no agreed way to judge success. Capture today’s baseline numbers and choose a target.", o:[
+  ["We will compare against today’s numbers, which we already have.",2],
+  ["We will measure something, but still need to decide what.",1],
+  ["People will tell us whether it feels better.",0],
+  ["If leadership stops asking about it.",0]]}
+];
+
+var idx = 0, answers = [], order = [];
+var $ = function (id) { return document.getElementById(id); };
+
+function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
+function render() {
+  var q = Q[idx];
+  $("count").textContent = "Question " + (idx + 1) + " of " + Q.length;
+  $("prog").style.width = (idx / Q.length * 100) + "%";
+  $("q").textContent = q.p;
+  if (!order[idx]) order[idx] = shuffle([0, 1, 2, 3]);
+  var h = "";
+  order[idx].forEach(function (oi) {
+    h += '<label class="opt"><input type="radio" name="o" value="' + oi + '"' + (answers[idx] === oi ? " checked" : "") + '><span>' + q.o[oi][0] + "</span></label>";
+  });
+  $("opts").innerHTML = h;
+  $("next").disabled = answers[idx] === undefined;
+  $("next").textContent = idx === Q.length - 1 ? "See my results" : "Next";
+  $("back").hidden = idx === 0;
+}
+
+function band(n) { return n >= 11 ? ["good", "Strong"] : n >= 7 ? ["mid", "Partial"] : ["bad", "Weak"]; }
+
+function result() {
+  $("quiz").hidden = true;
+  var tot = {need: 0, ready: 0}, gaps = {need: [], ready: []};
+  Q.forEach(function (q, i) {
+    var s = q.o[answers[i]][1];
+    tot[q.g] += s;
+    if (s < 2) gaps[q.g].push({a: q.a, t: q.gap, s: s});
+  });
+  var nb = band(tot.need), rb = band(tot.ready), msg;
+  if (tot.need < 7) msg = "Automation may not be the right lever yet. A simpler fix, or a closer look at the problem, could serve you better than an AI build.";
+  else if (tot.ready >= 11) msg = "You have a real case and a solid foundation. A scoped project is realistic" + (tot.need < 11 ? ", ideally starting with a pilot to prove the value." : ".");
+  else if (tot.ready >= 7) msg = "The case is there, and the foundation is partly in place. Start with a small pilot and close the gaps listed below as you go.";
+  else msg = "You have a real need, but the groundwork isn’t set. Prepare your process, data, and ownership first, then build.";
+
+  function block(title, key, n, b) {
+    var h = '<div class="score"><div class="top"><b>' + title + '</b><span class="v ' + b[0] + '">' + b[1] + " (" + n + " of 14)</span></div>";
+    h += '<div class="meter"><i style="width:' + (n / 14 * 100) + '%"></i></div>';
+    var g = gaps[key].sort(function (x, y) { return x.s - y.s; });
+    if (g.length) { h += '<ul class="gaps">'; g.forEach(function (x) { h += "<li><b>" + x.a + ":</b> " + x.t + "</li>"; }); h += "</ul>"; }
+    else h += "<p>No gaps found.</p>";
+    return h + "</div>";
+  }
+
+  var sum = "Automation self-check results\nNeed: " + tot.need + "/14 (" + nb[1] + ")\nReadiness: " + tot.ready + "/14 (" + rb[1] + ")\n\nAreas to work on:\n";
+  gaps.need.concat(gaps.ready).forEach(function (x) { sum += "- " + x.a + "\n"; });
+
+  $("result").innerHTML = '<div class="card"><h1>Your results</h1><p>' + msg + "</p>" +
+    block("Need: does your problem call for automation?", "need", tot.need, nb) +
+    block("Readiness: can your business use it?", "ready", tot.ready, rb) +
+    '<p class="muted">This is a self-assessment based on your own answers. Share it with your consultant and talk through any area that surprised you.</p>' +
+    '<textarea id="sum" readonly aria-label="Results summary">' + sum + '</textarea>' +
+    '<div class="btns"><button id="copy">Copy summary</button><button id="again" class="primary">Retake</button></div></div>';
+  $("result").hidden = false;
+  $("copy").onclick = function () {
+    var t = $("sum"); t.select();
+    try { navigator.clipboard.writeText(t.value); $("copy").textContent = "Copied"; } catch (e) { try { document.execCommand("copy"); $("copy").textContent = "Copied"; } catch (e2) {} }
+  };
+  $("again").onclick = function () { idx = 0; answers = []; order = []; $("result").hidden = true; $("quiz").hidden = false; render(); window.scrollTo(0, 0); };
+}
+
+$("start").onclick = function () { $("intro").hidden = true; $("quiz").hidden = false; render(); };
+$("opts").addEventListener("change", function (e) { answers[idx] = parseInt(e.target.value, 10); $("next").disabled = false; });
+$("next").onclick = function () { if (idx < Q.length - 1) { idx++; render(); } else result(); };
+$("back").onclick = function () { if (idx > 0) { idx--; render(); } };
+</script>
+</body>
+</html>
