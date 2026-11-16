@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AI Automation Client Scorecards</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#f3f5f2; --surface:#ffffff; --ink:#1b2a26; --muted:#5d6b66; --line:#d5ddd9;
+  --accent:#0f6b5c; --accent-ink:#ffffff; --good:#17794a; --mid:#a8650a; --bad:#b3372f;
+  --chip:#e6eee9;
+}
+:root:not([data-theme="light"]){}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#121a18; --surface:#1b2623; --ink:#e8f0ec; --muted:#9db0a9; --line:#2f3d39;
+    --accent:#5fcfb8; --accent-ink:#0b1f1a; --good:#5fd49a; --mid:#e8b25a; --bad:#f08a80;
+    --chip:#243330;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#121a18; --surface:#1b2623; --ink:#e8f0ec; --muted:#9db0a9; --line:#2f3d39;
+  --accent:#5fcfb8; --accent-ink:#0b1f1a; --good:#5fd49a; --mid:#e8b25a; --bad:#f08a80;
+  --chip:#243330;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Source Sans 3","Segoe UI",system-ui,sans-serif;font-size:16px;line-height:1.5}
+main{max-width:760px;margin:0 auto;padding:20px 16px 120px}
+h1{font-family:"Fraunces",Georgia,serif;font-size:1.7rem;margin:0 0 4px;line-height:1.2}
+.sub{color:var(--muted);margin:0 0 18px}
+.tabs{display:flex;gap:8px;margin-bottom:16px}
+.tab{flex:1;padding:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;font:inherit;font-weight:600;cursor:pointer}
+.tab[aria-selected="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.tab:focus-visible,.opt:focus-within,input:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.client{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;margin-bottom:16px}
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.sec h2{font-family:"Fraunces",Georgia,serif;font-size:1.1rem;margin:0 0 2px}
+.hint{color:var(--muted);font-size:.9rem;margin:0 0 10px}
+.qs{margin:0 0 12px;padding-left:18px;font-size:.95rem}
+.qs li{margin-bottom:3px}
+.opts{display:flex;gap:6px}
+.opt{flex:1;position:relative}
+.opt input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.opt span{display:block;text-align:center;padding:9px 4px;border:1px solid var(--line);border-radius:8px;font-size:.88rem;background:var(--chip)}
+.opt input:checked + span{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.notes{width:100%;margin-top:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;font-size:.9rem}
+.result{position:sticky;bottom:0;margin:0 -16px;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:2px solid var(--accent)}
+.result .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;max-width:760px;margin:0 auto}
+.score{font-family:"Fraunces",Georgia,serif;font-size:1.5rem;font-weight:700}
+.verdict{font-weight:600}
+.verdict.good{color:var(--good)}.verdict.mid{color:var(--mid)}.verdict.bad{color:var(--bad)}
+.detail{max-width:760px;margin:4px auto 0;color:var(--muted);font-size:.9rem}
+.reset{margin-top:8px;padding:8px 14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;font:inherit;cursor:pointer}
+.legend{font-size:.88rem;color:var(--muted);margin-bottom:14px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <h1>AI automation client scorecards</h1>
+  <p class="sub">Score each area from 0 to 2 during discovery. Totals and verdicts update as you go.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="t-need" aria-selected="true" aria-controls="p-need">1. Need fit</button>
+    <button class="tab" role="tab" id="t-ready" aria-selected="false" aria-controls="p-ready">2. Readiness</button>
+  </div>
+
+  <input class="client" id="client" placeholder="Client name and call date" aria-label="Client name and call date">
+  <p class="legend">0 = no or unclear &nbsp;|&nbsp; 1 = partly &nbsp;|&nbsp; 2 = clearly yes</p>
+
+  <div id="p-need" role="tabpanel"></div>
+  <div id="p-ready" role="tabpanel" hidden></div>
+</main>
+
+<div class="result" aria-live="polite">
+  <div class="row">
+    <div><span class="score" id="score">0 / 0</span> <span id="label" style="color:var(--muted)"></span></div>
+    <div class="verdict" id="verdict"></div>
+  </div>
+  <div class="detail" id="detail"></div>
+  <div class="row"><button class="reset" id="reset">Clear this scorecard</button></div>
+</div>
+
+<script>
+var cards = {
+  need: {
+    label: "Need fit",
+    bands: [
+      {min: 11, cls: "good", text: "Strong fit", detail: "Real, measurable problem suited to AI. Propose a scoped project or a 2-week pilot."},
+      {min: 7, cls: "mid", text: "Possible fit", detail: "Some gaps. Consider simple automation first, or a small pilot on one workflow."},
+      {min: 0, cls: "bad", text: "Weak fit", detail: "Recommend a simpler fix or pass. Not worth AI right now."}
+    ],
+    sections: [
+      {t: "Real problem", h: "Is there a costly, specific pain?", q: ["Which task costs the most time or money?", "Hours per week and people involved?", "What happens when it fails or is delayed?"]},
+      {t: "Repeatable process", h: "Is it consistent enough to automate?", q: ["Can they walk through it step by step?", "What share of cases are exceptions?", "Are rules written down (SOPs)?"]},
+      {t: "AI is the right tool", h: "Would plain automation fall short?", q: ["Does it involve language, summarizing, classifying, or messy inputs?", "Could Zapier/Make or a script do it instead?", "Is 90-95% accuracy acceptable?"]},
+      {t: "Data and systems", h: "Can AI reach what it needs?", q: ["Which tools are involved, and do they have APIs?", "Is the data accessible and clean enough?", "Any privacy or compliance limits?"]},
+      {t: "Volume and value", h: "Is the payoff big enough?", q: ["How often does the task happen?", "Is volume growing?", "Current cost vs. solution plus running costs?"]},
+      {t: "Right reasons", h: "Is the motivation sound?", q: ["Why AI specifically?", "Is the process stable, not a broken one being patched?", "Are expectations realistic about replacing judgment?"]},
+      {t: "Clear owner", h: "Is someone accountable?", q: ["Who owns the process?", "Who reviews AI output?", "Fallback when it fails?"]}
+    ],
+    opts: ["0 No", "1 Partly", "2 Yes"]
+  },
+  ready: {
+    label: "Readiness",
+    bands: [
+      {min: 11, cls: "good", text: "Ready", detail: "Proceed with a full project."},
+      {min: 7, cls: "mid", text: "Mostly ready", detail: "Start with a pilot and close the gaps as you go."},
+      {min: 0, cls: "bad", text: "Not ready", detail: "Offer a paid discovery or process-documentation phase first, or walk away."}
+    ],
+    sections: [
+      {t: "Process", h: "Documented and stable?", q: ["Documented, or in someone's head?", "Stable for 6+ months?", "Can they show 5-10 real examples?"]},
+      {t: "Data", h: "Available and permitted?", q: ["Know where data lives and who has access?", "Consistent format?", "Historical samples within a day or two?", "Allowed to send to an AI provider?"]},
+      {t: "Technical", h: "Systems and IT lined up?", q: ["APIs or integrations available?", "Named IT contact who can grant access?", "Any policy against cloud AI?"]},
+      {t: "People", h: "Owner and team on board?", q: ["Committed owner with weekly time?", "Frontline staff involved, not worried about job loss?", "Clear final approver?"]},
+      {t: "Expectations", h: "Realistic about AI?", q: ["Accepts errors and human review at first?", "Sees it as something to improve over time?", "Knows what happens when it is wrong?"]},
+      {t: "Budget and commitment", h: "Money and time set aside?", q: ["Budget approved, decision-maker involved?", "Prepared for ongoing API and maintenance costs?", "Flexible timeline?"]},
+      {t: "Measurement", h: "Can success be proven?", q: ["Baseline numbers known (time, errors, cost)?", "Target number defined?", "Someone will track it after launch?"]}
+    ],
+    opts: ["0 Not ready", "1 Partial", "2 Ready"]
+  }
+};
+
+var state = {}; // {need:{0:1,...}, ready:{...}}
+var notes = {};
+var current = "need";
+try { var s = localStorage.getItem("aiscorecards"); if (s) { var o = JSON.parse(s); state = o.state || {}; notes = o.notes || {}; document.getElementById("client").value = o.client || ""; } } catch (e) {}
+
+function save() {
+  try { localStorage.setItem("aiscorecards", JSON.stringify({state: state, notes: notes, client: document.getElementById("client").value})); } catch (e) {}
+}
+
+function build(key) {
+  var c = cards[key], root = document.getElementById("p-" + key);
+  state[key] = state[key] || {}; notes[key] = notes[key] || {};
+  var html = "";
+  c.sections.forEach(function (s, i) {
+    html += '<section class="sec"><h2>' + s.t + '</h2><p class="hint">' + s.h + '</p><ul class="qs">';
+    s.q.forEach(function (q) { html += "<li>" + q + "</li>"; });
+    html += '</ul><div class="opts" role="radiogroup" aria-label="' + s.t + ' score">';
+    c.opts.forEach(function (o, v) {
+      var chk = state[key][i] === v ? " checked" : "";
+      html += '<label class="opt"><input type="radio" name="' + key + i + '" value="' + v + '" data-k="' + key + '" data-i="' + i + '"' + chk + '><span>' + o + "</span></label>";
+    });
+    html += '</div><input class="notes" placeholder="Notes" data-nk="' + key + '" data-ni="' + i + '" value="' + (notes[key][i] || "").replace(/"/g, "&quot;") + '"></section>';
+  });
+  root.innerHTML = html;
+}
+
+function update() {
+  var c = cards[current], st = state[current] || {}, total = 0, max = c.sections.length * 2;
+  Object.keys(st).forEach(function (k) { total += st[k]; });
+  document.getElementById("score").textContent = total + " / " + max;
+  document.getElementById("label").textContent = c.label;
+  var band = c.bands.filter(function (b) { return total >= b.min; })[0];
+  var answered = Object.keys(st).length;
+  var v = document.getElementById("verdict");
+  if (answered === 0) { v.textContent = "Not scored yet"; v.className = "verdict"; document.getElementById("detail").textContent = "Pick 0, 1, or 2 for each area."; return; }
+  v.textContent = band.text + (answered < c.sections.length ? " (so far)" : "");
+  v.className = "verdict " + band.cls;
+  document.getElementById("detail").textContent = band.detail;
+}
+
+function show(key) {
+  current = key;
+  ["need", "ready"].forEach(function (k) {
+    document.getElementById("p-" + k).hidden = k !== key;
+    document.getElementById("t-" + k).setAttribute("aria-selected", k === key ? "true" : "false");
+  });
+  update();
+}
+
+build("need"); build("ready");
+document.getElementById("t-need").onclick = function () { show("need"); };
+document.getElementById("t-ready").onclick = function () { show("ready"); };
+document.addEventListener("change", function (e) {
+  var t = e.target;
+  if (t.dataset && t.dataset.k) { state[t.dataset.k][t.dataset.i] = parseInt(t.value, 10); save(); update(); }
+});
+document.addEventListener("input", function (e) {
+  var t = e.target;
+  if (t.dataset && t.dataset.nk) { notes[t.dataset.nk][t.dataset.ni] = t.value; save(); }
+  if (t.id === "client") save();
+});
+document.getElementById("reset").onclick = function () {
+  state[current] = {}; notes[current] = {}; build(current); save(); update();
+};
+show("need");
+</script>
+</body>
+</html>
