@@ -1,0 +1,920 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>scikit-learn — Interactive Cheat Sheet</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0e1117; --bg-2:#0b0f16; --panel:#151a23; --panel-2:#1b222d;
+    --line:#242d3b; --text:#e6edf3; --muted:#8b98a9;
+    --orange:#f89939; --blue:#4aa8e0; --green:#5fcf80;
+    --mono:'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:'Inter',system-ui,-apple-system,Segoe UI,sans-serif;
+    font-size:15px; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--blue);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:var(--mono);font-size:.88em}
+
+  /* ---------- top bar ---------- */
+  .topbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; align-items:center; gap:18px;
+    padding:12px 22px;
+    background:rgba(14,17,23,.86);
+    backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.02em;white-space:nowrap}
+  .brand .dot{width:10px;height:10px;border-radius:3px;background:linear-gradient(135deg,var(--orange),var(--blue));box-shadow:0 0 14px rgba(248,153,57,.5)}
+  .brand span{color:var(--muted);font-weight:500;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+  .search{position:relative;flex:1;max-width:520px;margin-left:auto}
+  .search input{
+    width:100%; padding:9px 40px 9px 36px;
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    color:var(--text); font:inherit; font-size:14px; outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .search input:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(248,153,57,.13)}
+  .search .icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px}
+  .search kbd{
+    position:absolute; right:10px; top:50%; transform:translateY(-50%);
+    font-family:var(--mono); font-size:11px; color:var(--muted);
+    border:1px solid var(--line); border-radius:5px; padding:1px 6px; background:var(--bg-2);
+  }
+  .count{font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+  /* ---------- layout ---------- */
+  .shell{display:grid;grid-template-columns:236px minmax(0,1fr);gap:34px;max-width:1320px;margin:0 auto;padding:0 22px}
+
+  .nav{position:sticky;top:66px;align-self:start;max-height:calc(100vh - 90px);overflow:auto;padding:26px 0 40px}
+  .nav h2{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 12px 10px;font-weight:700}
+  .nav a{
+    display:flex;align-items:center;gap:9px;
+    padding:7px 10px;border-radius:8px;color:var(--muted);
+    font-size:13.5px;font-weight:500;border-left:2px solid transparent;
+    transition:color .12s,background .12s;
+  }
+  .nav a:hover{color:var(--text);background:var(--panel);text-decoration:none}
+  .nav a.active{color:var(--orange);background:rgba(248,153,57,.08);border-left-color:var(--orange)}
+  .nav a.hidden{display:none}
+  .nav a .ico{width:16px;text-align:center;opacity:.9}
+
+  main{padding:0 0 90px;min-width:0}
+
+  /* ---------- hero ---------- */
+  .hero{padding:38px 0 8px}
+  .hero h1{font-size:clamp(26px,4vw,38px);line-height:1.1;letter-spacing:-.03em;margin:0 0 8px;font-weight:800}
+  .hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--orange),var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{color:var(--muted);margin:0;max-width:62ch}
+
+  /* ---------- chooser ---------- */
+  .chooser{
+    margin:22px 0 34px;padding:18px;
+    background:linear-gradient(180deg,var(--panel),rgba(21,26,35,.55));
+    border:1px solid var(--line);border-radius:14px;
+  }
+  .chooser-top{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+  .chooser-top h3{margin:0;font-size:14px;font-weight:700}
+  .chooser-top small{color:var(--muted);font-size:12px}
+  .chooser-form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) auto;gap:10px;align-items:end}
+  .field{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .field label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  select{
+    width:100%;padding:8px 10px;border-radius:9px;
+    background:var(--bg-2);border:1px solid var(--line);color:var(--text);
+    font:inherit;font-size:13px;outline:none;cursor:pointer;
+  }
+  select:focus{border-color:var(--orange)}
+  button.primary{
+    padding:9px 16px;border-radius:9px;border:0;cursor:pointer;
+    background:var(--orange);color:#1a1205;font:inherit;font-size:13px;font-weight:700;
+    transition:filter .12s;
+  }
+  button.primary:hover{filter:brightness(1.08)}
+  .verdict{margin-top:14px;padding:14px;border-radius:10px;background:var(--bg-2);border:1px solid var(--line);display:none}
+  .verdict.show{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .verdict .name{font-size:15px;font-weight:700;color:var(--orange)}
+  .verdict .why{color:var(--muted);font-size:13px;margin:4px 0 10px}
+
+  /* ---------- sections ---------- */
+  section{scroll-margin-top:78px;margin-bottom:40px}
+  .sec-head{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding-bottom:9px;border-bottom:1px solid var(--line)}
+  .sec-head h2{font-size:17px;font-weight:700;letter-spacing:-.01em;margin:0}
+  .sec-head .tag{
+    font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+    color:var(--orange);background:rgba(248,153,57,.1);
+    border:1px solid rgba(248,153,57,.22);border-radius:20px;padding:2px 9px;
+  }
+
+  .cards{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));align-items:start}
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    overflow:hidden;transition:border-color .15s,transform .15s;
+  }
+  .card:hover{border-color:#33415a}
+  .card[hidden]{display:none}
+  .card-head{padding:11px 14px 0}
+  .card-head h4{margin:0;font-size:13.5px;font-weight:600}
+  .card-head p{margin:2px 0 0;font-size:12.5px;color:var(--muted);line-height:1.45}
+  .code{position:relative;margin:10px 0 0;background:var(--bg-2);border-top:1px solid var(--line)}
+  .code pre{
+    margin:0;padding:12px 14px;overflow-x:auto;
+    font-family:var(--mono);font-size:12.5px;line-height:1.62;
+    color:#c9d6e4;tab-size:4;
+  }
+  .code pre::-webkit-scrollbar{height:8px}
+  .code pre::-webkit-scrollbar-thumb{background:#2b3546;border-radius:4px}
+  .copy{
+    position:absolute;top:7px;right:7px;z-index:2;
+    padding:3px 8px;border-radius:6px;cursor:pointer;
+    background:var(--panel-2);border:1px solid var(--line);color:var(--muted);
+    font:inherit;font-size:10.5px;font-weight:600;letter-spacing:.04em;
+    opacity:0;transition:opacity .15s,color .15s;
+  }
+  .card:hover .copy,.code:focus-within .copy{opacity:1}
+  .copy:hover{color:var(--text)}
+  .copy.done{color:var(--green);border-color:rgba(95,207,128,.4)}
+  .note{padding:8px 14px;font-size:12px;color:var(--muted);border-top:1px dashed var(--line)}
+  .note b{color:var(--orange);font-weight:600}
+
+  .tok-kw{color:#ff9e64}
+  .tok-str{color:#9ece6a}
+  .tok-com{color:#5c6b80;font-style:italic}
+  .tok-num{color:#7dcfff}
+
+  .empty{display:none;padding:60px 0;text-align:center;color:var(--muted)}
+  .empty.show{display:block}
+  .empty b{display:block;color:var(--text);font-size:16px;margin-bottom:4px}
+
+  footer{max-width:1320px;margin:0 auto;padding:24px 22px 60px;border-top:1px solid var(--line);color:var(--muted);font-size:12px;display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:space-between}
+
+  @media (max-width:900px){
+    .shell{grid-template-columns:1fr;gap:0}
+    .nav{
+      position:sticky;top:57px;z-index:40;max-height:none;
+      display:flex;gap:6px;overflow-x:auto;padding:10px 0;
+      background:var(--bg);border-bottom:1px solid var(--line);
+      scrollbar-width:none;
+    }
+    .nav::-webkit-scrollbar{display:none}
+    .nav h2{display:none}
+    .nav a{white-space:nowrap;border-left:0;border:1px solid var(--line);border-radius:20px;padding:5px 12px;font-size:12.5px}
+    .nav a.active{border-color:var(--orange)}
+    .chooser-form{grid-template-columns:1fr 1fr}
+    .chooser-form button.primary{grid-column:1/-1}
+    .cards{grid-template-columns:1fr}
+    .copy{opacity:1}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><div class="dot"></div>scikit-learn <span>cheat sheet</span></div>
+  <div class="search">
+    <span class="icon">⌕</span>
+    <input id="q" type="search" placeholder="Search estimators, metrics, preprocessing…" autocomplete="off" spellcheck="false" aria-label="Search cheat sheet" />
+    <kbd>/</kbd>
+  </div>
+  <div class="count" id="count"></div>
+</header>
+
+<div class="shell">
+  <nav class="nav" id="nav"><h2>Topics</h2></nav>
+
+  <main>
+    <div class="hero">
+      <h1>Python for Data Science — <em>scikit-learn</em></h1>
+      <p>Every snippet is copy-ready. Search filters as you type, <kbd>/</kbd> jumps to the box, and the chooser below picks a starting estimator for your problem.</p>
+    </div>
+
+    <div class="chooser">
+      <div class="chooser-top">
+        <h3>Which estimator should I start with?</h3>
+        <small>pick three things →</small>
+      </div>
+      <div class="chooser-form">
+        <div class="field">
+          <label for="c-task">Task</label>
+          <select id="c-task">
+            <option value="classification">Classification</option>
+            <option value="regression">Regression</option>
+            <option value="clustering">Clustering</option>
+            <option value="reduction">Dimensionality reduction</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="c-size">Dataset size</label>
+          <select id="c-size">
+            <option value="small">Small (&lt; 1k rows)</option>
+            <option value="medium" selected>Medium (1k – 100k)</option>
+            <option value="large">Large (&gt; 100k)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="c-need">What matters most</label>
+          <select id="c-need">
+            <option value="accuracy">Accuracy</option>
+            <option value="speed">Speed</option>
+            <option value="interpret">Explainability</option>
+          </select>
+        </div>
+        <button class="primary" id="c-go">Recommend</button>
+      </div>
+      <div class="verdict" id="verdict">
+        <div class="name" id="v-name"></div>
+        <div class="why" id="v-why"></div>
+        <div class="code">
+          <button class="copy" data-copy>Copy</button>
+          <pre id="v-code"></pre>
+        </div>
+      </div>
+    </div>
+
+    <div id="sections"></div>
+    <div class="empty" id="empty"><b>No matches</b>Try a different term — e.g. “scaler”, “auc”, “pipeline”, “kmeans”.</div>
+  </main>
+</div>
+
+<footer>
+  <span>scikit-learn cheat sheet · works offline · API notes target sklearn ≥ 1.4</span>
+  <span><kbd>/</kbd> search · <kbd>Esc</kbd> clear · click any snippet to copy</span>
+</footer>
+
+<script>
+/* ------------------------------------------------------------------ data */
+const DATA = [
+  { id:'basics', icon:'◆', title:'Setup & Basics', tag:'start here', items:[
+    { t:'Install & check version', d:'scikit-learn ships with numpy and scipy.',
+      c:`pip install scikit-learn pandas matplotlib` },
+    { t:'Canonical imports', d:'The five imports almost every script needs.',
+      c:`import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import sklearn
+from sklearn import datasets
+
+print(sklearn.__version__)   # 1.4+
+X, y = datasets.load_iris(return_X_y=True)  # X: (150, 4)` },
+    { t:'Toy datasets', d:'Built-in data for experiments, no download.',
+      c:`from sklearn.datasets import (load_iris, load_diabetes,
+    load_wine, load_breast_cancer, make_classification,
+    make_regression, make_blobs)
+
+X, y = make_classification(n_samples=1000, n_features=20,
+                           n_informative=5, random_state=42)
+Xb, _ = make_blobs(n_samples=500, centers=4, random_state=42)` },
+    { t:'Load a real dataset', d:'OpenML for tabular, fetch_* for the classics.',
+      c:`from sklearn.datasets import fetch_openml
+X, y = fetch_openml("titanic", version=1,
+                    as_frame=True, return_X_y=True)
+print(X.dtypes)      # mixed types → needs ColumnTransformer` },
+    { t:'X vs y contract', d:'Every estimator expects a 2-D float matrix and a 1-D target.',
+      c:`print(X.shape, y.shape)   # (150, 4) (150,)
+print(X.dtype)            # float64 — cast if object
+X = X.astype("float64")
+y = y.astype("int64")` },
+    { t:'Useful global config', d:'Pretty pipeline diagrams in notebooks.',
+      c:`from sklearn import set_config
+set_config(display="diagram")   # renders pipelines as boxes` },
+  ]},
+
+  { id:'split', icon:'⧉', title:'Splitting & Validation', tag:'cv', items:[
+    { t:'Train / test split', d:'Stratify on the target for classification.',
+      c:`from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y)` },
+    { t:'Cross-validation score', d:'More reliable than a single holdout.',
+      c:`from sklearn.model_selection import cross_val_score, StratifiedKFold
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+scores = cross_val_score(model, X, y, cv=cv, scoring="f1_macro")
+print(f"{scores.mean():.3f} ± {scores.std():.3f}")` },
+    { t:'Multiple metrics at once', d:'Returns fit time too, useful for benchmarking.',
+      c:`from sklearn.model_selection import cross_validate
+res = cross_validate(model, X, y, cv=5,
+                     scoring=["accuracy", "f1_macro", "roc_auc"])
+print(res["test_accuracy"].mean())` },
+    { t:'Time series split', d:'Never shuffle time-ordered data.',
+      c:`from sklearn.model_selection import TimeSeriesSplit
+cv = TimeSeriesSplit(n_splits=5, test_size=None)
+for tr, te in cv.split(X):        # always train → test
+    model.fit(X[tr], y[tr])` },
+    { t:'Learning & validation curves', d:'Is it overfitting or just under-trained?',
+      c:`from sklearn.model_selection import learning_curve, validation_curve
+train_sizes, tr, va = learning_curve(
+    model, X, y, cv=5, train_sizes=np.linspace(.1, 1.0, 5))
+train_sc, val_sc = validation_curve(
+    model, X, y, param_name="C", param_range=[.01, .1, 1, 10], cv=5)` },
+    { t:'Leave-one-out / repeated', d:'Small data only — LOO is expensive.',
+      c:`from sklearn.model_selection import (LeaveOneOut,
+    RepeatedStratifiedKFold, ShuffleSplit)
+loo = LeaveOneOut()
+rep = RepeatedStratifiedKFold(n_splits=5, n_repeats=10, random_state=42)` },
+  ]},
+
+  { id:'prep', icon:'⚙', title:'Preprocessing', tag:'features', items:[
+    { t:'Scaling: fit on train, transform both', d:'Never fit on the test set — that is leakage.',
+      c:`from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+X_train_s = scaler.fit_transform(X_train)   # learn mean/std
+X_test_s  = scaler.transform(X_test)        # reuse them` },
+    { t:'Which scaler?', d:'Outliers → RobustScaler, bounded → MinMax, else Standard.',
+      c:`from sklearn.preprocessing import (StandardScaler, MinMaxScaler,
+    RobustScaler, MaxAbsScaler)
+
+StandardScaler()   # mean 0, std 1  — default choice
+MinMaxScaler()     # squash to [0, 1]
+RobustScaler()     # median / IQR — outlier-tolerant
+MaxAbsScaler()     # sparse-safe, [-1, 1]` },
+    { t:'One-hot encoding', d:'handle_unknown stops a crash on unseen categories.',
+      c:`from sklearn.preprocessing import OneHotEncoder
+ohe = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
+X_cat = ohe.fit_transform(df[["city", "plan"]])
+print(ohe.get_feature_names_out(["city", "plan"]))` },
+    { t:'Ordinal encoding', d:'For ordered categories or tree models.',
+      c:`from sklearn.preprocessing import OrdinalEncoder
+oe = OrdinalEncoder(handle_unknown="use_encoded_value",
+                    unknown_value=-1,
+                    categories=[["low", "mid", "high"]])
+X_ord = oe.fit_transform(df[["tier"]])` },
+    { t:'Missing values', d:'Trees tolerate NaN; linear models do not.',
+      c:`from sklearn.impute import SimpleImputer, KNNImputer
+SimpleImputer(strategy="median")          # numeric
+SimpleImputer(strategy="most_frequent")   # categorical
+KNNImputer(n_neighbors=5)                 # slow but smarter` },
+    { t:'Non-linear features', d:'Polynomials and bins before a linear model.',
+      c:`from sklearn.preprocessing import PolynomialFeatures
+from sklearn.preprocessing import KBinsDiscretizer
+
+poly = PolynomialFeatures(degree=2, include_bias=False)
+X_poly = poly.fit_transform(X[["a", "b"]])
+
+kb = KBinsDiscretizer(n_bins=5, encode="ordinal",
+                      strategy="quantile")` },
+    { t:'Skewed targets', d:'Log-transform the target, invert predictions after.',
+      c:`from sklearn.preprocessing import PowerTransformer
+pt = PowerTransformer(method="yeo-johnson")
+y_t = pt.fit_transform(y.reshape(-1, 1)).ravel()
+# inverse: pt.inverse_transform(pred.reshape(-1, 1))` },
+  ]},
+
+  { id:'pipe', icon:'⇉', title:'Pipelines & ColumnTransformer', tag:'core', items:[
+    { t:'Full mixed-type pipeline', d:'The one pattern worth memorising. No leakage, one object to save.',
+      c:`from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.linear_model import LogisticRegression
+
+num = ["age", "income"]
+cat = ["city", "plan"]
+
+pre = ColumnTransformer([
+    ("num", Pipeline([("imp", SimpleImputer(strategy="median")),
+                      ("sc", StandardScaler())]), num),
+    ("cat", Pipeline([("imp", SimpleImputer(strategy="most_frequent")),
+                      ("oh", OneHotEncoder(handle_unknown="ignore"))]), cat),
+])
+
+clf = Pipeline([("pre", pre),
+                ("model", LogisticRegression(max_iter=1000))])
+clf.fit(X_train, y_train)
+pred = clf.predict(X_test)` },
+    { t:'Shorthand pipeline', d:'make_pipeline auto-names each step.',
+      c:`from sklearn.pipeline import make_pipeline
+pipe = make_pipeline(StandardScaler(), LogisticRegression())
+print(pipe.named_steps)   # {'standardscaler':…, 'logisticregression':…}` },
+    { t:'Column names with a DataFrame', d:'Keeps feature names through the whole pipeline.',
+      c:`clf.fit(X_train, y_train)          # pass a DataFrame, not .values
+names = clf[:-1].get_feature_names_out()
+print(names[:10])
+print(clf.predict(pd.DataFrame([{...}])))   # warns if columns mismatch` },
+    { t:'Remainder columns', d:'ColumnTransformer drops unlisted columns by default.',
+      c:`pre = ColumnTransformer([...], remainder="passthrough")
+# or remainder=StandardScaler() to transform the rest` },
+    { t:'Tune a pipeline step', d:'Prefix parameters with the step name and __.',
+      c:`param_grid = {
+    "pre__num__sc__with_mean": [True, False],
+    "model__C": [0.01, 0.1, 1, 10],
+}
+GridSearchCV(clf, param_grid, cv=5)` },
+    { t:'Inspect a fitted pipeline', d:'Reach any step by name.',
+      c:`clf.named_steps["model"].coef_
+clf.named_steps["pre"].transformers_
+clf[-1].classes_        # last step
+clf[:2]                 # slice steps into a sub-pipeline` },
+  ]},
+
+  { id:'select', icon:'⌗', title:'Feature Selection & Reduction', tag:'features', items:[
+    { t:'Univariate filter', d:'Fast first pass; k is the number of features to keep.',
+      c:`from sklearn.feature_selection import SelectKBest, f_classif
+selector = SelectKBest(f_classif, k=10).fit(X_train, y_train)
+X_sel = selector.transform(X_train)
+mask = selector.get_support()
+cols = X_train.columns[mask]` },
+    { t:'Mutual information', d:'Catches non-linear relationships f_classif misses.',
+      c:`from sklearn.feature_selection import (mutual_info_classif,
+    mutual_info_regression)
+mi = mutual_info_classif(X, y, random_state=42)
+top = np.argsort(mi)[::-1][:10]` },
+    { t:'Recursive elimination', d:'RFECV picks the count for you.',
+      c:`from sklearn.feature_selection import RFE, RFECV
+rfe  = RFE(estimator=model, n_features_to_select=10, step=1)
+rfecv = RFECV(estimator=model, cv=5, scoring="accuracy", n_jobs=-1)
+rfecv.fit(X_train, y_train)
+print(rfecv.n_features_, rfecv.support_)` },
+    { t:'Model-based selection', d:'Uses importances or coefficients as the filter.',
+      c:`from sklearn.feature_selection import SelectFromModel
+sfm = SelectFromModel(
+    RandomForestClassifier(n_estimators=200, random_state=42),
+    threshold="median")
+sfm.fit(X_train, y_train)` },
+    { t:'Drop near-constant columns', d:'Cheap cleanup before anything else.',
+      c:`from sklearn.feature_selection import VarianceThreshold
+vt = VarianceThreshold(threshold=0.0)   # 0 = constant only
+X_clean = vt.fit_transform(X)` },
+    { t:'PCA', d:'n_components < 1 keeps that fraction of variance.',
+      c:`from sklearn.decomposition import PCA
+pca = PCA(n_components=0.95, random_state=42)
+X_pca = pca.fit_transform(X_scaled)
+print(pca.explained_variance_ratio_.cumsum()[-1])` },
+    { t:'t-SNE / UMAP-style view', d:'Visualisation only — never feed into a model.',
+      c:`from sklearn.manifold import TSNE
+emb = TSNE(n_components=2, perplexity=30,
+           init="pca", random_state=42).fit_transform(X_scaled)
+plt.scatter(emb[:, 0], emb[:, 1], c=y, cmap="viridis", s=12)` },
+  ]},
+
+  { id:'classify', icon:'◉', title:'Classification', tag:'models', items:[
+    { t:'The usual suspects', d:'One dict, swap and compare.',
+      c:`from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.ensemble import (RandomForestClassifier,
+    HistGradientBoostingClassifier, GradientBoostingClassifier)
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.naive_bayes import GaussianNB
+
+models = {
+    "logreg": LogisticRegression(max_iter=1000),
+    "svm":    SVC(kernel="rbf", C=1.0, probability=True),
+    "rf":     RandomForestClassifier(n_estimators=300, n_jobs=-1,
+                                     random_state=42),
+    "hgb":    HistGradientBoostingClassifier(random_state=42),
+    "knn":    KNeighborsClassifier(n_neighbors=5),
+    "tree":   DecisionTreeClassifier(max_depth=5, random_state=42),
+    "nb":     GaussianNB(),
+}` },
+    { t:'Fit, predict, predict_proba', d:'predict_proba is what you need for ROC / thresholds.',
+      c:`model.fit(X_train, y_train)
+y_pred  = model.predict(X_test)
+y_proba = model.predict_proba(X_test)[:, 1]   # P(class 1)
+model.classes_` },
+    { t:'Baseline first', d:'Beats guessing and tells you if the fancy model earns its keep.',
+      c:`from sklearn.dummy import DummyClassifier, DummyRegressor
+dummy = DummyClassifier(strategy="most_frequent")
+dummy.fit(X_train, y_train)
+print(dummy.score(X_test, y_test))` },
+    { t:'Class imbalance', d:'class_weight re-weights the loss; resampling is the alternative.',
+      c:`LogisticRegression(class_weight="balanced", max_iter=1000)
+RandomForestClassifier(class_weight="balanced_subsample",
+                       n_estimators=300, random_state=42)
+SVC(class_weight="balanced")` },
+    { t:'Multi-class', d:'Most estimators handle it natively; OvR/OvO otherwise.',
+      c:`from sklearn.multiclass import OneVsRestClassifier, OneVsOneClassifier
+ovr = OneVsRestClassifier(LogisticRegression(max_iter=1000))
+# or just: LogisticRegression(multi_class="multinomial")` },
+    { t:'Calibrate probabilities', d:'Tree ensembles are over-confident out of the box.',
+      c:`from sklearn.calibration import CalibratedClassifierCV
+cal = CalibratedClassifierCV(model, method="isotonic", cv=5)
+cal.fit(X_train, y_train)` },
+    { t:'Threshold tuning', d:'The 0.5 cut is arbitrary; pick it from the curve.',
+      c:`from sklearn.metrics import precision_recall_curve
+prec, rec, thr = precision_recall_curve(y_test, y_proba)
+f1 = 2 * prec * rec / (prec + rec + 1e-9)
+best = thr[np.nanargmax(f1)]
+y_pred = (y_proba >= best).astype(int)` },
+  ]},
+
+  { id:'regress', icon:'⟋', title:'Regression', tag:'models', items:[
+    { t:'Linear family', d:'Ridge and Lasso add regularisation; ElasticNet blends both.',
+      c:`from sklearn.linear_model import (LinearRegression, Ridge,
+    Lasso, ElasticNet, HuberRegressor)
+
+LinearRegression()
+Ridge(alpha=1.0)            # L2 — shrinks coefficients
+Lasso(alpha=0.001)          # L1 — sets some to zero
+ElasticNet(alpha=0.1, l1_ratio=0.5)
+HuberRegressor()            # robust to outliers` },
+    { t:'Non-linear regressors', d:'Trees and boosting dominate tabular data.',
+      c:`from sklearn.ensemble import (RandomForestRegressor,
+    HistGradientBoostingRegressor, GradientBoostingRegressor)
+from sklearn.svm import SVR
+from sklearn.neighbors import KNeighborsRegressor
+
+HistGradientBoostingRegressor(random_state=42)
+RandomForestRegressor(n_estimators=300, n_jobs=-1, random_state=42)
+SVR(kernel="rbf", C=1.0, epsilon=0.1)   # scale X first` },
+    { t:'Scale the target too', d:'Huge targets destabilise SVMs and NNs.',
+      c:`from sklearn.compose import TransformedTargetRegressor
+reg = TransformedTargetRegressor(
+    regressor=Ridge(), func=np.log1p, inverse_func=np.expm1)` },
+    { t:'Fit & score', d:'score() is R², not accuracy.',
+      c:`reg.fit(X_train, y_train)
+y_pred = reg.predict(X_test)
+print(reg.score(X_test, y_test))   # R²` },
+    { t:'Poisson / count targets', d:'Use the right loss instead of log-transforming.',
+      c:`from sklearn.linear_model import PoissonRegressor, TweedieRegressor
+PoissonRegressor(alpha=1e-3, max_iter=500)
+TweedieRegressor(power=1.5, alpha=0.1)` },
+  ]},
+
+  { id:'cluster', icon:'❋', title:'Clustering & Anomalies', tag:'unsupervised', items:[
+    { t:'KMeans', d:'Scale features first — it is distance based.',
+      c:`from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+km = KMeans(n_clusters=4, n_init="auto", random_state=42)
+labels = km.fit_predict(X_scaled)
+print(silhouette_score(X_scaled, labels))   # -1 … 1, higher = better
+print(km.cluster_centers_)` },
+    { t:'Pick k with the elbow', d:'Plot inertias and look for the bend.',
+      c:`inertias = [KMeans(n_clusters=k, n_init="auto",
+                     random_state=42).fit(X_scaled).inertia_
+            for k in range(1, 11)]
+plt.plot(range(1, 11), inertias, "o-")
+plt.xlabel("k"); plt.ylabel("inertia")` },
+    { t:'DBSCAN', d:'No k needed, finds arbitrary shapes, labels noise as -1.',
+      c:`from sklearn.cluster import DBSCAN
+db = DBSCAN(eps=0.5, min_samples=5).fit(X_scaled)
+labels = db.labels_
+n_noise = (labels == -1).sum()` },
+    { t:'Hierarchical', d:'Good when you want a dendrogram or a fixed cut.',
+      c:`from sklearn.cluster import AgglomerativeClustering
+agg = AgglomerativeClustering(n_clusters=3, linkage="ward")
+labels = agg.fit_predict(X_scaled)` },
+    { t:'Gaussian mixtures', d:'Soft assignments, unlike KMeans.',
+      c:`from sklearn.mixture import GaussianMixture
+gm = GaussianMixture(n_components=3, covariance_type="full",
+                     random_state=42).fit(X_scaled)
+proba = gm.predict_proba(X_scaled)   # (n, 3)
+print(gm.bic(X_scaled))              # lower is better` },
+    { t:'Anomaly detection', d:'Fit on normal data only, then flag outliers.',
+      c:`from sklearn.ensemble import IsolationForest
+iso = IsolationForest(contamination=0.02, random_state=42)
+flags = iso.fit_predict(X)      # -1 = anomaly, 1 = normal
+scores = iso.score_samples(X)   # lower = more anomalous` },
+  ]},
+
+  { id:'tune', icon:'⚑', title:'Hyperparameter Tuning', tag:'search', items:[
+    { t:'GridSearchCV', d:'Exhaustive, reproducible, fine for small grids.',
+      c:`from sklearn.model_selection import GridSearchCV
+gs = GridSearchCV(estimator=clf,
+                  param_grid={"model__C": [0.01, 0.1, 1, 10]},
+                  cv=5, scoring="f1_macro", n_jobs=-1, refit=True)
+gs.fit(X_train, y_train)
+print(gs.best_params_, gs.best_score_)
+final = gs.best_estimator_` },
+    { t:'RandomizedSearchCV', d:'Sample distributions instead of enumerating.',
+      c:`from sklearn.model_selection import RandomizedSearchCV
+from scipy.stats import loguniform, randint
+
+dist = {"model__C": loguniform(1e-3, 1e2),
+        "model__max_iter": randint(100, 500)}
+rs = RandomizedSearchCV(clf, dist, n_iter=40, cv=5,
+                        random_state=42, n_jobs=-1)
+rs.fit(X_train, y_train)` },
+    { t:'Successive halving', d:'Kills bad candidates early — much faster.',
+      c:`from sklearn.experimental import enable_halving_search_cv  # noqa
+from sklearn.model_selection import HalvingGridSearchCV
+hs = HalvingGridSearchCV(clf, {"model__C": [0.01, 0.1, 1, 10]},
+                         cv=5, factor=3, n_jobs=-1)
+hs.fit(X_train, y_train)` },
+    { t:'Search results as a table', d:'See the whole ranking, not just the winner.',
+      c:`import pandas as pd
+pd.DataFrame(gs.cv_results_)[
+    ["param_model__C", "mean_test_score", "std_test_score", "rank_test_score"]
+].sort_values("rank_test_score").head()` },
+    { t:'Custom scorer', d:'Wrap any function into a scoring string.',
+      c:`from sklearn.metrics import make_scorer, fbeta_score
+f2 = make_scorer(fbeta_score, beta=2)
+GridSearchCV(clf, grid, scoring=f2, cv=5)` },
+    { t:'Nested CV (honest estimate)', d:'Tuning inside the loop — slow but unbiased.',
+      c:`from sklearn.model_selection import cross_val_score
+outer = cross_val_score(gs, X, y, cv=5)   # gs refits each fold
+print(outer.mean())` },
+  ]},
+
+  { id:'metrics', icon:'▤', title:'Metrics & Evaluation', tag:'scoring', items:[
+    { t:'Classification report', d:'Precision, recall and F1 per class in one call.',
+      c:`from sklearn.metrics import classification_report
+print(classification_report(y_test, y_pred, digits=3))` },
+    { t:'Confusion matrix', d:'Plot it directly from an estimator.',
+      c:`from sklearn.metrics import ConfusionMatrixDisplay
+ConfusionMatrixDisplay.from_estimator(model, X_test, y_test,
+                                      cmap="Blues")
+plt.show()` },
+    { t:'ROC AUC & PR AUC', d:'Imbalanced data → PR AUC is more informative.',
+      c:`from sklearn.metrics import (roc_auc_score, average_precision_score,
+    roc_curve, auc)
+print(roc_auc_score(y_test, y_proba))
+print(average_precision_score(y_test, y_proba))
+
+fpr, tpr, _ = roc_curve(y_test, y_proba)
+plt.plot(fpr, tpr, label=f"AUC={auc(fpr, tpr):.3f}")
+plt.plot([0, 1], [0, 1], "--", color="grey")` },
+    { t:'Regression metrics', d:'RMSE is not a sklearn function in older versions.',
+      c:`from sklearn.metrics import (mean_absolute_error,
+    mean_squared_error, r2_score, median_absolute_error)
+
+mae  = mean_absolute_error(y_test, y_pred)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+r2   = r2_score(y_test, y_pred)
+# sklearn >= 1.4: root_mean_squared_error(y_test, y_pred)` },
+    { t:'Scoring names', d:'Use these strings in cv / GridSearchCV.',
+      c:`# classification
+"accuracy"  "balanced_accuracy"  "f1"  "f1_macro"  "f1_weighted"
+"precision" "recall"  "roc_auc"  "average_precision"  "neg_log_loss"
+
+# regression
+"r2"  "neg_mean_absolute_error"  "neg_root_mean_squared_error"
+"neg_mean_squared_log_error"  "explained_variance"` },
+    { t:'Top-k accuracy', d:'For many-class problems where near-misses are fine.',
+      c:`from sklearn.metrics import top_k_accuracy_score
+top_k_accuracy_score(y_test, model.predict_proba(X_test), k=3)` },
+  ]},
+
+  { id:'inspect', icon:'◐', title:'Model Inspection', tag:'explain', items:[
+    { t:'Coefficients', d:'Sign and size, only meaningful on scaled features.',
+      c:`coefs = pd.Series(model.coef_[0], index=X_train.columns)
+print(coefs.sort_values(key=abs, ascending=False).head(10))` },
+    { t:'Feature importance', d:'Impurity-based — biased toward high-cardinality features.',
+      c:`imp = pd.Series(model.feature_importances_,
+                  index=X_train.columns).sort_values(ascending=False)
+print(imp.head(10))` },
+    { t:'Permutation importance', d:'Model-agnostic and honest; measured on held-out data.',
+      c:`from sklearn.inspection import permutation_importance
+res = permutation_importance(model, X_test, y_test,
+                             n_repeats=10, random_state=42, n_jobs=-1)
+imp = pd.Series(res.importances_mean, index=X_test.columns)
+print(imp.sort_values(ascending=False).head(10))` },
+    { t:'Partial dependence', d:'How one feature moves the prediction, on average.',
+      c:`from sklearn.inspection import PartialDependenceDisplay
+PartialDependenceDisplay.from_estimator(model, X_test, ["age", "income"])` },
+    { t:'Tree structure', d:'Export a small tree to a readable rule set.',
+      c:`from sklearn.tree import export_text, plot_tree
+print(export_text(model, feature_names=list(X_train.columns), max_depth=3))
+plot_tree(model, max_depth=3, filled=True)` },
+    { t:'SHAP-style explanations', d:'Permutation + PDP cover most needs; SHAP needs its own package.',
+      c:`# pip install shap
+import shap
+explainer = shap.Explainer(model.predict, X_test.sample(100))
+shap_values = explainer(X_test.sample(100))
+shap.plots.beeswarm(shap_values)` },
+  ]},
+
+  { id:'save', icon:'⤓', title:'Save, Load & Ship', tag:'production', items:[
+    { t:'joblib (preferred)', d:'Faster than pickle for numpy-heavy objects.',
+      c:`import joblib
+joblib.dump(clf, "model.joblib")          # compress=3 to shrink
+clf = joblib.load("model.joblib")
+clf.predict(X_new)` },
+    { t:'Version your model', d:'A pickle is tied to the sklearn version that made it.',
+      c:`import sklearn, json
+joblib.dump({"model": clf, "sklearn": sklearn.__version__,
+             "features": list(X_train.columns),
+             "trained_at": "2026-11-23"},
+            "model_bundle.joblib")` },
+    { t:'Score a single new row', d:'Pass a DataFrame with the same columns, same order.',
+      c:`row = pd.DataFrame([{"age": 34, "income": 52000,
+                       "city": "Manila", "plan": "pro"}])
+print(clf.predict(row))
+print(clf.predict_proba(row))` },
+    { t:'Refit on all data for production', d:'After you trust the CV score, train on train+test.',
+      c:`final = clone(gs.best_estimator_)
+final.fit(X, y)             # all data, same hyperparameters
+joblib.dump(final, "final.joblib")` },
+    { t:'Reproducibility checklist', d:'Two lines that save you a week of confusion.',
+      c:`np.random.seed(42)                    # global
+model = RandomForestClassifier(random_state=42)   # per estimator
+# also pin: sklearn.__version__, pandas version, data snapshot` },
+  ]},
+
+  { id:'gotchas', icon:'⚠', title:'Gotchas & Rules of Thumb', tag:'read me', items:[
+    { t:'Fit on train, transform on test', d:'The single most common bug.',
+      c:`# WRONG — test data leaks into the scaler
+scaler.fit_transform(X)      # on everything
+
+# RIGHT — or use a Pipeline, which does it for you
+scaler.fit(X_train)
+X_test_s = scaler.transform(X_test)` },
+    { t:'Trees do not need scaling', d:'RandomForest, HGB and DecisionTree are scale-invariant.',
+      c:`# needs scaling:   KNN, SVM, KMeans, PCA, MLP, linear w/ reg
+# does not need:   tree models, Naive Bayes, RandomForest` },
+    { t:'HGB handles NaN natively', d:'No imputer needed for HistGradientBoosting.',
+      c:`from sklearn.ensemble import HistGradientBoostingClassifier
+HistGradientBoostingClassifier()   # NaN and categoricals OK
+# everything else: impute first` },
+    { t:'Sparse vs dense', d:'Text features explode in width; keep them sparse.',
+      c:`from sklearn.feature_extraction.text import TfidfVectorizer
+vec = TfidfVectorizer(max_features=20000, ngram_range=(1, 2),
+                      stop_words="english")
+X_txt = vec.fit_transform(docs)   # sparse matrix
+# use LinearSVC / SGDClassifier / MultinomialNB on sparse input` },
+    { t:'Speed knobs', d:'n_jobs=-1 for forests, not for all estimators.',
+      c:`n_jobs=-1            # all cores (trees, CV, permutation)
+# SVC, KMeans, PCA: n_jobs is ignored or unsupported
+# big data: SGDClassifier, HistGradientBoosting, MiniBatchKMeans` },
+    { t:'Accuracy lies on imbalance', d:'99% accuracy can mean predicting the majority class.',
+      c:`from sklearn.metrics import balanced_accuracy_score, f1_score
+print(balanced_accuracy_score(y_test, y_pred))
+print(f1_score(y_test, y_pred, average="macro"))
+# prefer: PR-AUC, F1-macro, balanced accuracy` },
+  ]},
+];
+
+/* ------------------------------------------------------- tiny highlighter */
+const KW = "import|from|as|def|return|if|elif|else|for|in|while|with|try|except|finally|class|lambda|None|True|False|and|or|not|is|print|range|len|list|dict|int|float|str";
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+function hl(code) {
+  return esc(code).replace(
+    /(#[^\n]*)|('''[\s\S]*?'''|"""[\s\S]*?"""|[fr]?'[^'\n]*'|[fr]?"[^"\n]*")|\b(\d+(?:\.\d+)?)\b|\b([A-Za-z_][A-Za-z0-9_]*)\b/g,
+    (m, com, str, num, word) => {
+      if (com) return `<span class="tok-com">${com}</span>`;
+      if (str) return `<span class="tok-str">${str}</span>`;
+      if (num) return `<span class="tok-num">${num}</span>`;
+      if (word && new RegExp(`^(${KW})$`).test(word)) return `<span class="tok-kw">${word}</span>`;
+      return m;
+    }
+  );
+}
+
+/* ------------------------------------------------------------- rendering */
+const sectionsEl = document.getElementById("sections");
+const navEl = document.getElementById("nav");
+const countEl = document.getElementById("count");
+const emptyEl = document.getElementById("empty");
+
+const cards = [];   // {el, text}
+const navLinks = new Map();
+
+DATA.forEach(sec => {
+  const navLink = document.createElement("a");
+  navLink.href = "#" + sec.id;
+  navLink.innerHTML = `<span class="ico">${sec.icon}</span>${sec.title}`;
+  navEl.appendChild(navLink);
+  navLinks.set(sec.id, navLink);
+
+  const section = document.createElement("section");
+  section.id = sec.id;
+  section.innerHTML = `
+    <div class="sec-head"><h2>${sec.title}</h2><span class="tag">${sec.tag}</span></div>
+    <div class="cards"></div>`;
+  const grid = section.querySelector(".cards");
+
+  sec.items.forEach(item => {
+    const card = document.createElement("article");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="card-head"><h4>${esc(item.t)}</h4><p>${esc(item.d)}</p></div>
+      <div class="code">
+        <button class="copy" type="button">Copy</button>
+        <pre>${hl(item.c)}</pre>
+      </div>`;
+    card.querySelector(".copy").addEventListener("click", ev => copy(ev.currentTarget, item.c));
+    grid.appendChild(card);
+    cards.push({ el: card, sec, text: (item.t + " " + item.d + " " + item.c + " " + sec.title).toLowerCase() });
+  });
+
+  sectionsEl.appendChild(section);
+});
+
+function copy(btn, text) {
+  const done = () => {
+    btn.textContent = "Copied";
+    btn.classList.add("done");
+    setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1400);
+  };
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(done).catch(fallback);
+  } else fallback();
+
+  function fallback() {
+    const ta = document.createElement("textarea");
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); done(); } catch (e) { btn.textContent = "Ctrl+C"; }
+    ta.remove();
+  }
+}
+
+/* ----------------------------------------------------------------- search */
+const q = document.getElementById("q");
+function filter() {
+  const term = q.value.trim().toLowerCase();
+  let shown = 0;
+  cards.forEach(c => {
+    const hit = !term || term.split(/\s+/).every(t => c.text.includes(t));
+    c.el.hidden = !hit;
+    if (hit) shown++;
+  });
+  DATA.forEach(sec => {
+    const visible = cards.some(c => c.sec === sec && !c.el.hidden);
+    document.getElementById(sec.id).style.display = visible ? "" : "none";
+    navLinks.get(sec.id).classList.toggle("hidden", !visible);
+  });
+  countEl.textContent = `${shown} snippet${shown === 1 ? "" : "s"}`;
+  emptyEl.classList.toggle("show", shown === 0);
+}
+q.addEventListener("input", filter);
+q.addEventListener("keydown", e => { if (e.key === "Escape") { q.value = ""; filter(); q.blur(); } });
+document.addEventListener("keydown", e => {
+  if (e.key === "/" && document.activeElement !== q) { e.preventDefault(); q.focus(); q.select(); }
+});
+filter();
+
+/* -------------------------------------------------------------- scrollspy */
+const links = [...navEl.querySelectorAll("a")];
+const spy = new IntersectionObserver(entries => {
+  entries.forEach(en => {
+    if (en.isIntersecting) {
+      links.forEach(a => a.classList.toggle("active", a.getAttribute("href") === "#" + en.target.id));
+    }
+  });
+}, { rootMargin: "-80px 0px -70% 0px" });
+DATA.forEach(sec => spy.observe(document.getElementById(sec.id)));
+
+/* ---------------------------------------------------------------- chooser */
+const RULES = {
+  classification: {
+    small:  { accuracy:"SVC(kernel=\"rbf\", C=1.0, probability=True)", interpret:"LogisticRegression(max_iter=1000)", speed:"KNeighborsClassifier(n_neighbors=5)" },
+    medium: { accuracy:"HistGradientBoostingClassifier(random_state=42)", interpret:"LogisticRegression(max_iter=1000)", speed:"HistGradientBoostingClassifier(max_iter=100)" },
+    large:  { accuracy:"HistGradientBoostingClassifier(random_state=42)", interpret:"SGDClassifier(loss=\"log_loss\")", speed:"SGDClassifier(loss=\"log_loss\")" },
+  },
+  regression: {
+    small:  { accuracy:"SVR(kernel=\"rbf\", C=1.0)", interpret:"LinearRegression()", speed:"Ridge(alpha=1.0)" },
+    medium: { accuracy:"HistGradientBoostingRegressor(random_state=42)", interpret:"Ridge(alpha=1.0)", speed:"HistGradientBoostingRegressor(max_iter=100)" },
+    large:  { accuracy:"HistGradientBoostingRegressor(random_state=42)", interpret:"SGDRegressor(loss=\"squared_error\")", speed:"SGDRegressor(loss=\"squared_error\")" },
+  },
+};
+
+const WHY = {
+  "SVC": "Small, non-linear boundaries. Scale X first; SVC is O(n²) so keep it small.",
+  "LogisticRegression": "Linear, fast and explainable — read the coefficients directly.",
+  "KNeighbors": "No training cost, purely local. Scale X, and expect slow prediction.",
+  "HistGradientBoosting": "Best default for tabular data: fast, handles NaN and categories.",
+  "SGDClassifier": "Linear model trained on mini-batches — scales to millions of rows.",
+  "SVR": "Margin-based regression for small, non-linear data. Scale X.",
+  "LinearRegression": "The baseline. If a fancier model cannot beat it, use it.",
+  "Ridge": "Linear with L2 shrinkage — stable when features are correlated.",
+  "SGDRegressor": "Streaming linear regression for datasets too big for memory.",
+};
+
+document.getElementById("c-go").addEventListener("click", () => {
+  const task = document.getElementById("c-task").value;
+  const size = document.getElementById("c-size").value;
+  const need = document.getElementById("c-need").value;
+  const name = document.getElementById("v-name");
+  const why = document.getElementById("v-why");
+  const codeEl = document.getElementById("v-code");
+  const box = document.getElementById("verdict");
+
+  let est, reason, code;
+
+  if (task === "clustering") {
+    est = size === "large" ? "MiniBatchKMeans" : "KMeans";
+    reason = need === "interpret"
+      ? "Centroids are readable; assign new points with predict(). Scale X first."
+      : "Fast, assumes roughly spherical clusters. Try DBSCAN if shapes are odd or k is unknown.";
+    code = `from sklearn.cluster import ${est}\nfrom sklearn.preprocessing import StandardScaler\n\nX_s = StandardScaler().fit_transform(X)\n${est}(n_clusters=4, n_init="auto", random_state=42).fit_predict(X_s)`;
+  } else if (task === "reduction") {
+    est = need === "interpret" ? "PCA(n_components=0.95)" : "PCA(n_components=2)";
+    reason = "PCA keeps the variance you can explain. Use t-SNE/UMAP only to visualise.";
+    code = `from sklearn.decomposition import PCA\nfrom sklearn.preprocessing import StandardScaler\n\nX_s = StandardScaler().fit_transform(X)\nX_p = ${est}.fit_transform(X_s)`;
+  } else {
+    est = RULES[task][size][need];
+    const key = Object.keys(WHY).find(k => est.startsWith(k));
+    reason = WHY[key] || "Solid starting point — validate with cross-validation.";
+    code = `from sklearn.model_selection import cross_val_score\n\nmodel = ${est}\nscores = cross_val_score(model, X_train, y_train, cv=5,\n                         scoring="${task === "regression" ? "r2" : "f1_macro"}")\nprint(scores.mean())\nmodel.fit(X_train, y_train)`;
+  }
+
+  name.textContent = est.split("(")[0];
+  why.textContent = reason;
+  codeEl.innerHTML = hl(code);
+  box.classList.add("show");
+  box.querySelector(".copy").onclick = ev => copy(ev.currentTarget, code);
+});
+</script>
+</body>
+</html>
