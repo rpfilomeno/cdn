@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OmniSyn POC — end-to-end data flow</title>
+<style>
+  :root{
+    --bg:#0b1120; --panel:#0f172a; --line:#1e293b;
+    --ink:#e2e8f0; --dim:#94a3b8; --faint:#64748b;
+    --accent:#38bdf8; --lime:#a3e635; --warn:#fb923c;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:15px/1.55 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    display:grid; grid-template-rows:auto 1fr; overflow:hidden;
+  }
+  header{
+    display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center;
+    padding:12px 18px; border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#0f172a,#0b1120);
+  }
+  h1{font-size:15px;margin:0;font-weight:650;letter-spacing:.2px}
+  h1 span{color:var(--faint);font-weight:400;margin-left:8px}
+  .spacer{flex:1}
+  button{
+    font:inherit;font-size:13px;color:var(--ink);background:#152036;
+    border:1px solid #24334d;border-radius:7px;padding:6px 11px;cursor:pointer;
+  }
+  button:hover{background:#1b2a44;border-color:#33465f}
+  button[aria-pressed="true"]{background:#0e2a3d;border-color:var(--accent);color:#bae6fd}
+  button:focus-visible,.node:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .hint{color:var(--faint);font-size:12.5px}
+  .zoom{display:flex;align-items:center;gap:4px;border:1px solid #24334d;border-radius:8px;padding:2px;background:#101a2c}
+  .zoom button{border:0;background:transparent;padding:4px 8px}
+  .zoom button:hover{background:#1b2a44}
+  .zoom #zlevel{min-width:48px;text-align:center;font-size:12.5px;color:var(--dim);font-variant-numeric:tabular-nums}
+  main{display:grid;grid-template-columns:1fr clamp(300px,24vw,360px);min-height:0;min-width:0}
+  #stage{
+    position:relative;min-height:0;min-width:0;overflow:hidden;cursor:grab;
+    background:
+      radial-gradient(1200px 700px at 30% 0%,#0e1a2e 0%,transparent 70%),
+      radial-gradient(1px 1px at 1px 1px,#1b2a40 1px,transparent 0) 0 0/26px 26px,
+      var(--bg);
+  }
+  #stage.dragging{cursor:grabbing}
+  #stage svg{display:block;width:100%;height:100%}
+  header,.zoom,#world{user-select:none}
+  #world{transform-origin:0 0;transition:transform .18s ease-out;will-change:transform}
+  #stage.dragging #world{transition:none}
+  aside{border-left:1px solid var(--line);background:var(--panel);padding:16px;overflow:auto;min-height:0}
+  aside h2{font-size:13px;margin:0 0 2px;letter-spacing:.3px;text-transform:uppercase;color:var(--dim)}
+  .kind{font-size:11.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+  .detail{font-size:14px;color:#cbd5e1}
+  .flows{margin:14px 0 0;padding:0;list-style:none;font-size:13px}
+  .flows li{padding:6px 0;border-top:1px solid #172033;color:var(--dim)}
+  .flows b{color:var(--ink);font-weight:500}
+  #narration{margin-top:18px;padding:12px;border-radius:9px;background:#0c1626;border:1px solid #1c2b42;font-size:13.5px;color:#cbd5e1;min-height:80px}
+  #narration .step{color:var(--accent);font-size:11.5px;letter-spacing:.9px;text-transform:uppercase;display:block;margin-bottom:5px}
+  #narration.empty{color:var(--faint)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:16px;font-size:12px;color:var(--faint)}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  /* svg */
+  .edge{fill:none;stroke:#44586f;stroke-width:1.6;transition:stroke .15s,opacity .15s}
+  .edge.on{stroke:var(--accent);stroke-width:2.6}
+  .edge.dim{opacity:.16}
+  .elabel{font-size:12px;fill:#8ea4bd;opacity:0;transition:opacity .15s;pointer-events:none}
+  .elabel.on{opacity:1;fill:#bae6fd}
+  .node{cursor:pointer}
+  .node rect{transition:stroke .15s}
+  .node .label{font-size:15px;font-weight:600;pointer-events:none}
+  .node .sub{font-size:12px;pointer-events:none}
+  .node:hover rect{stroke:#6d8fb0;stroke-width:1.8}
+  .node.on rect{stroke:#38bdf8;stroke-width:2.4}
+  .node.dim{opacity:.3}
+  .node.sel rect{stroke:#a3e635;stroke-width:2.4}
+  .lane{font-size:11px;letter-spacing:1.8px;fill:#42597a;text-transform:uppercase}
+  @media (max-width:900px){
+    body{overflow:auto}
+    main{grid-template-columns:1fr;grid-template-rows:minmax(320px,1fr) auto}
+    aside{border-left:0;border-top:1px solid var(--line);max-height:46vh}
+    h1 span{display:none}
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>OmniSyn PoC — end-to-end data flow <span>DFD level 1 · corrected flow order</span></h1>
+  <div class="spacer"></div>
+  <span class="hint" id="hint">drag to pan · scroll to zoom · click a box</span>
+  <div class="zoom">
+    <button id="zout" aria-label="Zoom out">−</button>
+    <span id="zlevel">100%</span>
+    <button id="zin" aria-label="Zoom in">+</button>
+    <button id="zfit" title="Fit the whole diagram">Fit</button>
+    <button id="z100" title="Reset to 100%">1:1</button>
+  </div>
+  <button id="play" aria-pressed="false">▶ Play the run</button>
+  <button id="prev">◀ Step</button>
+  <button id="next">Step ▶</button>
+  <button id="reset">Reset</button>
+</header>
+<main>
+  <div id="stage">
+    <svg id="dfd" role="img" aria-label="Data flow diagram of the OmniSyn proof of concept">
+      <g id="world"></g>
+    </svg>
+  </div>
+  <aside>
+    <h2 id="dtTitle">Pick something</h2>
+    <div class="kind" id="dtKind">click a process, store or actor</div>
+    <div class="detail" id="dtBody">Every box is clickable. The connections listed here are the flows that touch it.</div>
+    <ul class="flows" id="dtFlows"></ul>
+    <div id="narration" class="empty">Press <b>Play the run</b> to walk a single bill through the system, or use Step.</div>
+    <div class="legend">
+      <span><i style="background:#1e293b;border:1px solid #334155"></i>process</span>
+      <span><i style="background:#0c2a3a;border:1px solid #1f5b6b"></i>data store</span>
+      <span><i style="background:#131c2e;border:1px dashed #2b3b56"></i>external</span>
+      <span><i style="background:#123047;border:1px solid #38bdf8"></i>active</span>
+    </div>
+  </aside>
+</main>
+
+<script>
+(() => {
+  const W = 1400, H = 1040;
+
+  const nodes = [
+    {id:'CL', t:'ext', x:30,  y:50,  w:180,h:60, label:'Clinic staff', sub:'OpenEMR + print queue',
+     body:'Finishes the consultation in OpenEMR and prints the bill. The same encounter also arrives over the OpenEMR API, so intake has two independent views of the visit.'},
+    {id:'PT', t:'ext', x:30,  y:152, w:180,h:60, label:'Patient', sub:'consent · card · NRIC',
+     body:'Presents the CHAS or PG/MG card, gives consent, and receives the statement. Their year-to-date usage is the reason two identical bills can produce different answers.'},
+    {id:'MO', t:'ext', x:1180,y:600, w:190,h:60, label:'MOH / CPF', sub:'SmartCMS · MHCP · NPHC',
+     body:'The scheme side. In production this is SmartCMS (Synapxe) for CHAS and MOH subsidies, and NPHC or MHCP for MediSave and MediShield Life. In the PoC it is an adapter against a sandbox.'},
+    {id:'IN', t:'ext', x:1180,y:682, w:190,h:60, label:'Insurer / TPA', sub:'portal only',
+     body:'Integrated Shield and corporate administrators have no public adjudication API. Portals, e-mail and phone. The PoC simulates the response and says so out loud.'},
+    {id:'EM', t:'ext', x:1180,y:764, w:190,h:60, label:'Employer admin', sub:'benefit schedule',
+     body:'Group medical cover: which benefits, which panel, what residual the employee owes. Sits after the scheme payers, never before.'},
+    {id:'BK', t:'ext', x:1180,y:846, w:190,h:60, label:'Payment rail', sub:'bank / GIRO',
+     body:'Where settlement instructions go in production. The PoC writes the instruction and reconciles a mocked remittance; no money moves and no account is held.'},
+    {id:'RV', t:'ext', x:1180,y:928, w:190,h:60, label:'Reviewer', sub:'clinic finance · auditor',
+     body:'The person the dashboard is for. Reads the funding split and the rule trace, and can replay any historical decision.'},
+
+    {id:'S1', t:'p', x:340, y:50,  w:250,h:62, label:'1 · Intake', sub:'capture · extract · normalise',
+     body:'Catches the print job, keeps the PDF, extracts the fields, and pulls the same encounter from OpenEMR. Two sources, one claim. Nothing downstream trusts a single feed.'},
+    {id:'S2', t:'p', x:340, y:152, w:250,h:62, label:'2 · Validate', sub:'schema · identity · idempotency',
+     body:'Identity, required fields, and a duplicate key of clinic + patient + date + receipt number. Printing the same bill twice must never produce two claims — the most expensive bug in this class of system.'},
+    {id:'S3', t:'p', x:340, y:254, w:250,h:62, label:'3 · Resolve coverage', sub:'eligibility · accumulators',
+     body:'Which schemes apply, at which tier, and what the patient has already used this year: subsidy caps, visit counts, MediSave allowance, deductible consumed. National state is cross-provider and must be stated, not assumed.'},
+    {id:'S4', t:'p', x:340, y:356, w:250,h:62, label:'4 · Documentation gate', sub:'completeness · pre-auth',
+     body:'Referral, itemised bill, pre-authorisation or LOG. This runs before adjudication because a missing or declined document changes who pays. The downstream insurer package is a second pass, after the scheme outcome, because it needs the HRN.'},
+    {id:'S5', t:'p', x:340, y:458, w:250,h:62, label:'5 · Adjudicate', sub:'versioned rules · trace',
+     body:'Rule tables decide what is allowed, in a fixed order, with the version recorded. The output is a decision and a trace, not a number: every rule that fired keeps its inputs.'},
+    {id:'S6', t:'p', x:340, y:560, w:250,h:62, label:'6 · Allocate funding', sub:'waterfall · residual',
+     body:'Subsidy, MediShield Life, MediSave, Integrated Shield, corporate benefit, patient cash — in that order, stopping when the bill is paid. Updates the accumulators it consumed.'},
+    {id:'S7', t:'p', x:340, y:662, w:250,h:62, label:'7 · Submit', sub:'payer adapters',
+     body:'One adapter interface, several implementations: MOH scheme claim, insurer pre-auth or claim, corporate benefit. In the PoC only the stub implementation is real.'},
+    {id:'S8', t:'p', x:340, y:764, w:250,h:62, label:'8 · Reconcile', sub:'remittance · variance',
+     body:'Predicted split against what came back. Any difference becomes a variance with a reason, never a silent gap. The scheme outcome also carries the HRN the downstream package needs.'},
+    {id:'S9', t:'p', x:340, y:866, w:250,h:62, label:'9 · Evidence', sub:'replay · dashboards',
+     body:'Serves the five screens and the replay key. A decision stored without its inputs and rule versions is not evidence, it is a screenshot.'},
+
+    {id:'D1', t:'d', x:820, y:50,  w:230,h:58, label:'D1 claim', sub:'encounter + lines + state',
+     body:'The claim and its lines, with the settled state written back after reconciliation. Idempotency lives on its natural key.'},
+    {id:'D3', t:'d', x:820, y:254, w:230,h:58, label:'D3 accumulators', sub:'YTD caps · deductible',
+     body:'The only genuinely mutable money state: caps used, visits counted, deductible consumed, co-insurance band. Most POC errors live here, not in the rule tables.'},
+    {id:'D4', t:'d', x:820, y:356, w:230,h:58, label:'D4 documents', sub:'PDFs + hashes',
+     body:'The captured bill and every supporting document, hashed. Evidence has to point at something that cannot change under it.'},
+    {id:'D2', t:'d', x:820, y:458, w:230,h:58, label:'D2 rule set', sub:'versioned decision tables',
+     body:'One row per rule: condition, outcome, citation, effective date, version. A claim stores the versions that decided it, which is what makes replay possible.'},
+    {id:'D7', t:'d', x:820, y:764, w:230,h:58, label:'D7 settlement ledger', sub:'instructions · remittances',
+     body:'What was instructed, what came back, and the difference. Never a balance: the platform does not hold funds.'},
+    {id:'D5', t:'d', x:820, y:866, w:230,h:58, label:'D5 audit log', sub:'append-only · chained',
+     body:'Hash-chained, append-only. Inputs, rule versions, arithmetic, and the replay key for every decision.'},
+    {id:'D6', t:'d', x:820, y:956, w:230,h:58, label:'D6 reference data', sub:'CHAS · TOSP · CDL',
+     body:'The published tables the rules read: CHAS tiers, Table of Surgical Procedures, Cancer Drug List, fee benchmarks. Today these are PDFs; making them machine-readable is a week-one task, not a footnote.'},
+  ];
+
+  const edges = [
+    {id:'e1',  a:'CL', b:'S1', l:'print job + meta'},
+    {id:'e2',  a:'PT', b:'S1', l:'consent, card, NRIC'},
+    {id:'e3',  a:'S1', b:'D1', l:'claim draft'},
+    {id:'e4',  a:'S1', b:'D4', l:'document'},
+    {id:'e5',  a:'D1', b:'S2', l:'draft'},
+    {id:'e6',  a:'S2', b:'S3', l:'clean claim'},
+    {id:'e7',  a:'S2', b:'CL', l:'exception'},
+    {id:'e8',  a:'D3', b:'S3', l:'used caps'},
+    {id:'e9',  a:'D6', b:'S3', l:'scheme data'},
+    {id:'e10', a:'S3', b:'S4', l:'coverage picture'},
+    {id:'e11', a:'D4', b:'S4', l:'documents present'},
+    {id:'e12', a:'S4', b:'CL', l:'missing doc / pre-auth'},
+    {id:'e13', a:'S4', b:'S5', l:'complete'},
+    {id:'e14', a:'D2', b:'S5', l:'rules vN'},
+    {id:'e15', a:'S5', b:'D5', l:'decision + trace'},
+    {id:'e16', a:'S5', b:'S6', l:'adjudicated'},
+    {id:'e17', a:'S6', b:'D3', l:'allocations'},
+    {id:'e18', a:'S6', b:'S7', l:'funded claim'},
+    {id:'e19', a:'S7', b:'MO', l:'scheme claim'},
+    {id:'e20', a:'S7', b:'IN', l:'pre-auth / claim'},
+    {id:'e21', a:'S7', b:'EM', l:'benefit claim'},
+    {id:'e22', a:'MO', b:'S8', l:'outcome + HRN'},
+    {id:'e23', a:'IN', b:'S8', l:'outcome'},
+    {id:'e24', a:'EM', b:'S8', l:'outcome'},
+    {id:'e25', a:'S8', b:'BK', l:'settlement instruction'},
+    {id:'e26', a:'BK', b:'S8', l:'remittance'},
+    {id:'e27', a:'S8', b:'D7', l:'ledger entry'},
+    {id:'e28', a:'D7', b:'D1', l:'settled state'},
+    {id:'e29', a:'D1', b:'S9', l:'claims'},
+    {id:'e30', a:'D5', b:'S9', l:'traces, replays'},
+    {id:'e31', a:'S9', b:'RV', l:'evidence, dashboards'},
+    {id:'e32', a:'S4', b:'PT', l:'statement'},
+  ];
+
+  const steps = [
+    {title:'A bill is printed', nodes:['CL','PT','S1','D1','D4'], edges:['e1','e2','e3','e4'],
+     text:'Staff finish the consultation and print. The spool service catches the job; the API supplies the same encounter. Two views of one visit, stored as a claim draft and a hashed document.'},
+    {title:'Is this a new claim?', nodes:['S2','D1'], edges:['e5','e6'],
+     text:'Identity check, then the duplicate key: clinic + patient + date + receipt. Print the bill twice and you still get one claim. A failure here returns to the clinic as an exception.'},
+    {title:'What is this patient entitled to?', nodes:['S3','D3','D6','S4','D4','PT'], edges:['e8','e9','e10','e11','e32'],
+     text:'CHAS tier, Healthier SG enrolment, caps already used this year, deductible consumed. Then the paperwork gate: referral, itemised bill, pre-authorisation. Missing document means "needs document", not "rejected".'},
+    {title:'Adjudicate against versioned rules', nodes:['S5','D2','D5'], edges:['e13','e14','e15'],
+     text:'Each rule that fires records its inputs, its citation and its version. The decision is written to the audit log before any money is allocated — retrofitting that later is a rewrite.'},
+    {title:'Split the bill', nodes:['S6','D3','S7'], edges:['e16','e17','e18'],
+     text:'Subsidy, then MediShield Life, MediSave, Integrated Shield, corporate benefit, patient cash. A $120 chronic visit on CHAS Blue: −$80 subsidy, −$40 MediSave, $0 cash — because this patient is enrolled at this clinic. Drop the enrolment and the answer changes.'},
+    {title:'Submit to the payers', nodes:['S7','MO','IN','EM'], edges:['e19','e20','e21'],
+     text:'One adapter interface, three implementations. In the PoC the MOH and insurer endpoints are sandboxes; that limitation is stated, not hidden.'},
+    {title:'Reconcile the money', nodes:['S8','MO','IN','EM','BK','D7'], edges:['e22','e23','e24','e25','e26','e27'],
+     text:'Outcomes and the HRN come back, the instruction goes out, the mocked remittance returns. Predicted versus actual: any difference is a variance with a reason, and none of it sits in an account of ours.'},
+    {title:'Prove it later', nodes:['S9','D1','D5','RV'], edges:['e29','e30','e31'],
+     text:'Settled state writes back to the claim. The reviewer opens any decision, reads the rule trace, and replays it bit-for-bit — same inputs, same versions, same number.'},
+  ];
+
+  /* ---------- validation ---------- */
+  const ids = new Set(nodes.map(n=>n.id));
+  const edgeIds = new Set(edges.map(e=>e.id));
+  const problems = [];
+  edges.forEach(e=>{ if(!ids.has(e.a)||!ids.has(e.b)) problems.push('edge '+e.id+' missing node'); });
+  steps.forEach((s,i)=>{
+    s.nodes.forEach(n=>{ if(!ids.has(n)) problems.push('step '+(i+1)+' missing node '+n); });
+    s.edges.forEach(e=>{ if(!edgeIds.has(e)) problems.push('step '+(i+1)+' missing edge '+e); });
+  });
+
+  const NS = 'http://www.w3.org/2000/svg';
+  const stage = document.getElementById('stage');
+  const svg = document.getElementById('dfd');
+  const world = document.getElementById('world');
+  const zlevel = document.getElementById('zlevel');
+  const mk = (tag, attrs) => { const n=document.createElementNS(NS,tag); for(const k in attrs) n.setAttribute(k,attrs[k]); return n; };
+
+  world.appendChild(mk('defs',{})).innerHTML =
+    '<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">'+
+      '<path d="M0,0 L10,5 L0,10 z" fill="#44586f"/></marker>'+
+    '<marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">'+
+      '<path d="M0,0 L10,5 L0,10 z" fill="#38bdf8"/></marker>';
+
+  [['EXTERNAL ACTORS',24,30],['PROCESSES',340,30],['DATA STORES',820,30]].forEach(([t,x,y])=>{
+    const l = mk('text',{x,y,class:'lane'}); l.textContent=t; world.appendChild(l);
+  });
+
+  const byId = Object.fromEntries(nodes.map(n=>[n.id,n]));
+  const edgeEls = {}, labelEls = {};
+
+  function pathFor(a,b){
+    const back = b.x + b.w/2 < a.x + a.w/2;
+    const ax = back ? a.x : a.x + a.w;
+    const bx = back ? b.x + b.w : b.x;
+    const ay = a.y + a.h/2, by = b.y + b.h/2;
+    if (Math.abs(by-ay) < 4) return `M${ax},${ay} L${bx},${by}`;
+    const dx = Math.max(70, Math.abs(bx-ax)*0.5);
+    const sx = back ? -dx : dx;
+    return `M${ax},${ay} C${ax+sx},${ay} ${bx-sx},${by} ${bx},${by}`;
+  }
+
+  edges.forEach(e=>{
+    const a = byId[e.a], b = byId[e.b];
+    const p = mk('path',{id:e.id, class:'edge', 'marker-end':'url(#ar)', d:pathFor(a,b)});
+    world.appendChild(p); edgeEls[e.id]=p;
+    const vertical = Math.abs((b.x+b.w/2)-(a.x+a.w/2)) < 6;
+    const lx = vertical ? a.x + a.w + 12 : (a.x+a.w + b.x)/2;
+    const ly = (a.y+a.h/2 + b.y+b.h/2)/2 - 7;
+    const t = mk('text',{class:'elabel', x:lx, y:ly, 'text-anchor': vertical ? 'start':'middle'});
+    t.textContent = e.l; world.appendChild(t); labelEls[e.id]=t;
+  });
+
+  nodes.forEach(n=>{
+    const g = mk('g',{class:'node '+(n.t==='d'?'store':n.t==='ext'?'ext':''), tabindex:'0', role:'button',
+      'data-id':n.id, 'aria-label':n.label+' — '+(n.sub||'')});
+    const skin = n.t==='d' ? {fill:'#0c2a3a', stroke:'#1f5b6b'}
+               : n.t==='ext' ? {fill:'#131c2e', stroke:'#2b3b56'}
+               : {fill:'#1e293b', stroke:'#334155'};
+    const r = mk('rect',{class:'box',x:n.x,y:n.y,width:n.w,height:n.h,rx:n.t==='ext'?10:n.t==='d'?3:9,
+      fill:skin.fill, stroke:skin.stroke, 'stroke-width':'1.4'});
+    if(n.t==='ext') r.setAttribute('stroke-dasharray','6 4');
+    g.appendChild(r);
+    if (n.t==='d') g.appendChild(mk('line',{x1:n.x+13,y1:n.y,x2:n.x+13,y2:n.y+n.h,stroke:'#1f5b6b','stroke-width':'1.3'}));
+    const t1 = mk('text',{class:'label',x:n.x+(n.t==='d'?24:16), y:n.y+(n.sub?26:36), fill:'#e2e8f0'});
+    t1.textContent=n.label; g.appendChild(t1);
+    if(n.sub){ const t2 = mk('text',{class:'sub',x:n.x+(n.t==='d'?24:16), y:n.y+46, fill:'#8fa3bd'}); t2.textContent=n.sub; g.appendChild(t2); }
+    world.appendChild(g);
+    g.addEventListener('click', ()=>{ if(suppressClick) return; select(n.id); });
+    g.addEventListener('keydown', ev=>{ if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();select(n.id);} });
+    g.addEventListener('mouseenter', ()=>hover(n.id,true));
+    g.addEventListener('mouseleave', ()=>hover(n.id,false));
+    n._g = g;
+  });
+
+  /* ---------------- map: pan + zoom ---------------- */
+  const view = {k:1, tx:0, ty:0};
+  let touched = false;
+  const MIN=0.35, MAX=2.6;
+  function applyView(){
+    world.style.transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.k})`;
+    zlevel.textContent = Math.round(view.k*100)+'%';
+  }
+  function clamp(){
+    const vw = stage.clientWidth, vh = stage.clientHeight;
+    const cw = W * view.k, ch = H * view.k;
+    view.tx = cw <= vw ? (vw - cw) / 2 : Math.min(0, Math.max(vw - cw, view.tx));
+    view.ty = ch <= vh ? (vh - ch) / 2 : Math.min(0, Math.max(vh - ch, view.ty));
+  }
+  function zoomAt(cx, cy, factor){
+    touched = true;
+    const r = svg.getBoundingClientRect();
+    const mx = cx - r.left, my = cy - r.top;
+    const k2 = Math.min(MAX, Math.max(MIN, view.k * factor));
+    view.tx = mx - (mx - view.tx) * (k2 / view.k);
+    view.ty = my - (my - view.ty) * (k2 / view.k);
+    view.k = k2; clamp(); applyView();
+  }
+  function fit(){
+    const vw = stage.clientWidth, vh = stage.clientHeight;
+    view.k = Math.min(vw/W, vh/H) * 0.94;
+    view.tx = (vw - W*view.k)/2;
+    view.ty = (vh - H*view.k)/2;
+    applyView();
+  }
+  function oneToOne(){
+    view.k = 1;
+    centerView();
+  }
+  function centerView(){
+    const vw = stage.clientWidth, vh = stage.clientHeight;
+    const cw = W*view.k, ch = H*view.k;
+    view.tx = cw <= vw ? (vw - cw)/2 : 0;
+    view.ty = ch <= vh ? (vh - ch)/2 : 0;
+    clamp(); applyView();
+  }
+  /* fill the viewport — no gutters at any window size */
+  function cover(){
+    const vw = stage.clientWidth, vh = stage.clientHeight;
+    if (!vw || !vh) return;
+    view.k = Math.min(2, Math.max(0.6, Math.max(vw/W, vh/H)));
+    centerView();
+  }
+  function centerOn(n){
+    const vw = stage.clientWidth, vh = stage.clientHeight;
+    const cx = (n.x + n.w/2) * view.k + view.tx;
+    const cy = (n.y + n.h/2) * view.k + view.ty;
+    const m = 80;
+    if (cx < m || cx > vw-m || cy < m || cy > vh-m){
+      view.tx = vw/2 - (n.x + n.w/2) * view.k;
+      view.ty = vh/2 - (n.y + n.h/2) * view.k;
+      clamp(); applyView();
+    }
+  }
+
+  document.getElementById('zin').addEventListener('click', ()=>{
+    zoomAt(stage.getBoundingClientRect().left + stage.clientWidth/2, stage.getBoundingClientRect().top + stage.clientHeight/2, 1.25);
+  });
+  document.getElementById('zout').addEventListener('click', ()=>{
+    zoomAt(stage.getBoundingClientRect().left + stage.clientWidth/2, stage.getBoundingClientRect().top + stage.clientHeight/2, 1/1.25);
+  });
+  document.getElementById('zfit').addEventListener('click', fit);
+  document.getElementById('z100').addEventListener('click', oneToOne);
+
+  stage.addEventListener('wheel', e=>{
+    e.preventDefault();
+    zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0012));
+  }, {passive:false});
+
+  let dragging=false, moved=false, suppressClick=false, sx=0, sy=0, ox=0, oy=0;
+  stage.addEventListener('pointerdown', e=>{
+    if (e.button!==0) return;
+    dragging=true; moved=false; sx=e.clientX; sy=e.clientY; ox=view.tx; oy=view.ty;
+  });
+  window.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const dx=e.clientX-sx, dy=e.clientY-sy;
+    if(!moved && Math.hypot(dx,dy) > 3){ moved=true; stage.classList.add('dragging'); }
+    if(moved){ view.tx=ox+dx; view.ty=oy+dy; touched=true; clamp(); applyView(); }
+  });
+  window.addEventListener('pointerup', ()=>{
+    if(!dragging) return;
+    dragging=false;
+    stage.classList.remove('dragging');
+    if(moved){ suppressClick=true; setTimeout(()=>suppressClick=false, 0); }
+  });
+  stage.addEventListener('dblclick', e=>{
+    const node = e.target.closest && e.target.closest('.node');
+    if (node){ select(node.dataset.id); }
+    else zoomAt(e.clientX, e.clientY, 1.4);
+  });
+
+  /* ---------------- selection + steps ---------------- */
+  const dtTitle=document.getElementById('dtTitle'), dtKind=document.getElementById('dtKind'),
+        dtBody=document.getElementById('dtBody'), dtFlows=document.getElementById('dtFlows'),
+        narration=document.getElementById('narration');
+
+  let step=-1, timer=null, playing=false;
+
+  function clearStates(){
+    nodes.forEach(n=>n._g.classList.remove('on','dim'));
+    edges.forEach(e=>{ edgeEls[e.id].classList.remove('on','dim'); edgeEls[e.id].setAttribute('marker-end','url(#ar)'); labelEls[e.id].classList.remove('on'); });
+  }
+  function highlight(setNodes, setEdges, focusNode){
+    clearStates();
+    const all = new Set(setNodes||[]);
+    edges.forEach(e=>{
+      const on = setEdges ? setEdges.has(e.id) : (focusNode && (e.a===focusNode||e.b===focusNode));
+      if (on){ edgeEls[e.id].classList.add('on'); edgeEls[e.id].setAttribute('marker-end','url(#arA)'); labelEls[e.id].classList.add('on');
+        if(!setEdges){ all.add(e.a); all.add(e.b); }
+      } else if (setEdges || focusNode){ edgeEls[e.id].classList.add('dim'); }
+    });
+    nodes.forEach(n=>{ if(all.has(n.id)) n._g.classList.add('on'); else if(setEdges||focusNode) n._g.classList.add('dim'); });
+  }
+  function hover(id, on){
+    if (on) highlight(null,null,id);
+    else if (step>=0) goStep(step,false);
+    else clearStates();
+  }
+  function select(id){
+    const n = byId[id];
+    nodes.forEach(x=>x._g.classList.toggle('sel', x.id===id));
+    dtTitle.textContent=n.label;
+    dtKind.textContent = n.t==='p'?'process':n.t==='d'?'data store':'external actor';
+    dtBody.textContent=n.body;
+    dtFlows.innerHTML='';
+    edges.filter(e=>e.a===id||e.b===id).forEach(e=>{
+      const li=document.createElement('li');
+      li.innerHTML='<b>'+e.l+'</b> · '+(e.a===id ? 'out → '+byId[e.b].label : 'in ← '+byId[e.a].label);
+      dtFlows.appendChild(li);
+    });
+    if(step<0) highlight(null,null,id);
+    centerOn(n);
+  }
+  function goStep(i){
+    step = Math.max(0, Math.min(steps.length-1, i));
+    const s = steps[step];
+    highlight(s.nodes, new Set(s.edges), null);
+    narration.className='';
+    narration.innerHTML = '<span class="step">Step '+(step+1)+' of '+steps.length+' · '+s.title+'</span>'+s.text;
+  }
+  function stopPlay(){ playing=false; clearInterval(timer); document.getElementById('play').textContent='▶ Play the run'; document.getElementById('play').setAttribute('aria-pressed','false'); }
+
+  document.getElementById('play').addEventListener('click', ()=>{
+    if(playing){ stopPlay(); return; }
+    playing=true;
+    document.getElementById('play').textContent='⏸ Pause';
+    document.getElementById('play').setAttribute('aria-pressed','true');
+    if(step<0) goStep(0);
+    timer=setInterval(()=>{ step+1>=steps.length ? (goStep(steps.length-1), stopPlay()) : goStep(step+1); }, 2600);
+  });
+  document.getElementById('next').addEventListener('click', ()=>{ stopPlay(); goStep(step+1); });
+  document.getElementById('prev').addEventListener('click', ()=>{ stopPlay(); goStep(step-1); });
+  document.getElementById('reset').addEventListener('click', ()=>{
+    stopPlay(); step=-1; clearStates(); nodes.forEach(n=>n._g.classList.remove('sel'));
+    narration.className='empty';
+    narration.innerHTML='Press <b>Play the run</b> to walk a single bill through the system, or use Step.';
+  });
+  document.addEventListener('keydown', ev=>{
+    const t=ev.target;
+    if(t && (t.tagName==='INPUT'||t.tagName==='TEXTAREA')) return;
+    if(ev.key===' ' && !(t && t.classList && t.classList.contains('node'))){ ev.preventDefault(); document.getElementById('play').click(); }
+    if(ev.key==='ArrowRight'){ document.getElementById('next').click(); }
+    if(ev.key==='ArrowLeft'){ document.getElementById('prev').click(); }
+    if(ev.key==='Escape'){ document.getElementById('reset').click(); }
+    if(ev.key==='+'||ev.key==='='){ document.getElementById('zin').click(); }
+    if(ev.key==='-'){ document.getElementById('zout').click(); }
+    if(ev.key==='0'){ fit(); }
+    if(ev.key==='1'){ oneToOne(); }
+  });
+
+  window.addEventListener('resize', ()=>{ if(!touched) cover(); else { clamp(); applyView(); } });
+
+  if (problems.length){
+    narration.className='';
+    narration.style.borderColor='#fb923c';
+    narration.innerHTML='<span class="step" style="color:#fb923c">diagram check failed</span>'+problems.join(' · ');
+    console.error(problems);
+  } else {
+    console.info('DFD check: '+nodes.length+' nodes, '+edges.length+' flows, '+steps.length+' steps — all references resolve.');
+  }
+
+  cover();
+})();
+</script>
+</body>
+</html>
